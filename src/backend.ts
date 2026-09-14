@@ -33,7 +33,12 @@ function resourceName(type: ResourceType, path: string): string {
 	return type === "skills" && basename(path) === "SKILL.md" ? basename(dirname(path)) : basename(path);
 }
 
-function shortPath(path: string, cwd: string): string {
+function shortPath(path: string, cwd: string, preferCwd: boolean): string {
+	if (preferCwd) {
+		const projectPath = relative(cwd, path);
+		if (projectPath === "") return ".";
+		if (!projectPath.startsWith("..")) return `./${projectPath}`;
+	}
 	const home = homedir();
 	if (path === home || path.startsWith(`${home}/`)) return `~${path.slice(home.length)}`;
 	const fromCwd = relative(cwd, path);
@@ -42,7 +47,7 @@ function shortPath(path: string, cwd: string): string {
 
 function groupLabel(metadata: PathMetadata, cwd: string): string {
 	if (metadata.origin === "package") return metadata.source;
-	if (metadata.baseDir) return `Local ${shortPath(metadata.baseDir, cwd)}`;
+	if (metadata.baseDir) return `Local ${shortPath(metadata.baseDir, cwd, metadata.scope === "project")}`;
 	return metadata.scope === "project" ? "Project settings" : "Global settings";
 }
 

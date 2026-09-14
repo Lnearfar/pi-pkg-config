@@ -43,8 +43,7 @@ test("disabling the last positive package include does not enable a sibling", as
 	}
 });
 
-test("global disable and project enable/reset round-trip through Pi resolution", async () => {
-	const root = mkdtempSync(join(tmpdir(), "pi-pkg-integration-"));
+test("global disable and project enable/reset round-trip through Pi resolution", async () => {	const root = mkdtempSync(join(tmpdir(), "pi-pkg-integration-"));
 	try {
 		const agentDir = join(root, "agent");
 		const cwd = join(root, "repo");
@@ -86,6 +85,37 @@ test("global disable and project enable/reset round-trip through Pi resolution",
 		assert.deepEqual(result.savedScopes, ["project"]);
 		assert.deepEqual(JSON.parse(readFileSync(join(cwd, ".pi", "settings.json"), "utf8")).skills, []);
 	} finally {
+		rmSync(root, { recursive: true, force: true });
+	}
+});
+
+test("project sources shorten to a cwd-relative path while global sources use the home path", async () => {
+	const root = mkdtempSync(join(tmpdir(), "pi-pkg-labels-"));
+	const previousHome = process.env.HOME;
+	const previousAgentDir = process.env.PI_CODING_AGENT_DIR;
+	try {
+		const home = join(root, "home");
+		const agentDir = join(home, ".pi", "agent");
+		const cwd = join(home, "Documents", "repo");
+		mkdirSync(join(agentDir, "skills", "global-skill"), { recursive: true });
+		mkdirSync(join(cwd, ".agents", "skills", "project-skill"), { recursive: true });
+		mkdirSync(join(cwd, ".pi"), { recursive: true });
+		writeFileSync(join(agentDir, "skills", "global-skill", "SKILL.md"), "---\nname: global-skill\ndescription: g\n---\n");
+		writeFileSync(join(cwd, ".agents", "skills", "project-skill", "SKILL.md"), "---\nname: project-skill\ndescription: p\n---\n");
+		writeFileSync(join(agentDir, "settings.json"), "{}\n");
+		writeFileSync(join(cwd, ".pi", "settings.json"), "{}\n");
+		process.env.HOME = home;
+		process.env.PI_CODING_AGENT_DIR = agentDir;
+
+		const backend = new PackageManagerBackend(cwd, true, "/extension");
+		const catalog = await backend.resolve();
+		assert.equal(catalog.project.find((resource) => resource.name === "project-skill")?.groupLabel, "Local ./.agents");
+		assert.equal(catalog.project.find((resource) => resource.name === "global-skill")?.groupLabel, "Local ~/.pi/agent");
+	} finally {
+		if (previousHome === undefined) delete process.env.HOME;
+		else process.env.HOME = previousHome;
+		if (previousAgentDir === undefined) delete process.env.PI_CODING_AGENT_DIR;
+		else process.env.PI_CODING_AGENT_DIR = previousAgentDir;
 		rmSync(root, { recursive: true, force: true });
 	}
 });

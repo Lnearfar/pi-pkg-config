@@ -256,12 +256,12 @@ export class PackageManagerComponent implements Focusable {
 	}
 
 	private renderGroupHeader(resource: ManagedResource, groupItems: ManagedResource[], inner: number): string {
-		const count = this.groupCount(groupItems);
-		const statistics = `${count}/${groupItems.length} enabled`;
-		const available = Math.max(1, inner - visibleWidth(statistics) - 4);
+		const statistics =
+			this.model.type === "extensions" ? "" : ` ${this.groupCount(groupItems)}/${groupItems.length} enabled`;
+		const prefix = " ⌄ ";
+		const available = Math.max(1, inner - visibleWidth(prefix) - visibleWidth(statistics));
 		const label = this.middleTruncate(resource.groupLabel, available);
-		const left = this.theme.fg("borderMuted", ` ⌄ ${label}`);
-		return `${left}${" ".repeat(Math.max(1, inner - visibleWidth(left) - visibleWidth(statistics)))}${this.theme.fg("muted", statistics)}`;
+		return `${this.theme.fg("borderMuted", `${prefix}${label}`)}${this.theme.fg("muted", statistics)}`;
 	}
 
 	private groupCount(resources: ManagedResource[]): number {

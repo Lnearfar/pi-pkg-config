@@ -119,8 +119,7 @@ test("compact mode switches the column headers at the inner width boundary", () 
 	assert.match(component.render(50)[1] ?? "", /\[P\].*G/);
 });
 
-test("untrusted Project view marks trust and counts inherited state", () => {
-	const resource = model().catalog.global[0]!;
+test("untrusted Project view marks trust and counts inherited state", () => {	const resource = model().catalog.global[0]!;
 	const state = new PackageManagerModel(
 		{ global: [resource], project: [resource], globalSettings: {}, projectSettings: {} },
 		"/repo",
@@ -131,6 +130,34 @@ test("untrusted Project view marks trust and counts inherited state", () => {
 	const output = component.render(120).join("\n");
 	assert.match(output, /trust required/);
 	assert.match(output, /1\/1 enabled/);
+});
+
+test("group statistics follow the source label with a single space", () => {
+	const component = new PackageManagerComponent(model(), theme, keybindings, () => {}, () => {}, 3);
+	const output = component.render(120).join("\n");
+	assert.match(output, /⌄ A very long global source label 1\/1 enabled/);
+	assert.doesNotMatch(output, /1\/1 enabled\s*$/m);
+});
+
+test("Extensions view omits group statistics", () => {
+	const base = model().catalog.global[0]!;
+	const resource: ManagedResource = {
+		...base,
+		id: "extensions:/tmp/example.ts",
+		type: "extensions",
+		path: "/tmp/example.ts",
+	};
+	const state = new PackageManagerModel(
+		{ global: [resource], project: [resource], globalSettings: {}, projectSettings: {} },
+		"/repo",
+		"/agent",
+		true,
+	);
+	state.type = "extensions";
+	const component = new PackageManagerComponent(state, theme, keybindings, () => {}, () => {}, 3);
+	const output = component.render(120).join("\n");
+	assert.match(output, /⌄ A very long global source label/);
+	assert.doesNotMatch(output, /enabled/);
 });
 
 test("selected rows keep their background when a long name is truncated", () => {
