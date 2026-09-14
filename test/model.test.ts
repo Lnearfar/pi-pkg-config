@@ -51,6 +51,17 @@ test("global toggles are staged and toggling back removes pending state", () => 
 	assert.equal(state.pending.size, 0);
 });
 
+test("global state reflects staged Global edits in the Project matrix", () => {
+	const resource = item("/home/u/.agents/skills/a/SKILL.md");
+	const state = model([resource]);
+	assert.equal(state.globalState(resource), true);
+	state.scope = "global";
+	state.toggle(resource);
+	state.scope = "project";
+	assert.equal(state.globalState(resource), false);
+	assert.equal(state.effectiveEnabled(resource), false);
+});
+
 test("project effective state respects non-exact project filters", () => {
 	const filtered = item("/home/u/.agents/skills/a/SKILL.md", { enabled: false, globalEnabled: true });
 	const state = model([item(filtered.path)], [filtered], { skills: ["!**"] });

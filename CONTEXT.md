@@ -31,7 +31,11 @@ pi 自动扫描的资源目录，不是包、不能被"安装/移除"：`~/.pi/a
 
 设置写在哪里、对谁生效：**Global**（`~/.pi/agent/settings.json`，所有项目）或 **Project**（`.pi/settings.json`，当前项目）。
 
-注意：scope 指的是**设置条目**所在的作用域，不是资源文件本身的位置——一个全局安装的包，它的资源也可以被项目作用域的条目覆盖。
+Scope 指的是**设置条目**所在的作用域。一个全局安装的包，其资源可以由 Project 作用域的条目覆盖。
+
+## Resource origin（资源归属）
+
+资源所属的解析范围：**Global** 或 **Project**。Resource origin 与 Scope 表示不同的领域概念；_Avoid_: Scope。
 
 ## Toggle state（开关状态）
 

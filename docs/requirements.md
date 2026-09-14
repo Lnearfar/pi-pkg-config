@@ -90,23 +90,27 @@ pi 本身能识别 `~/.agents/skills`、项目 `.agents/skills`（向上到 git 
 - 顶层只有 `Extensions` / `Skills` 两个 Tab；每个 Tab 只展示对应资源。
 - 顶层资源选择器顺序为 `Skills`、`Extensions`；作用域选择器独立存在，顺序为 `Project`、`Global`。
 - 两个选择器互相独立，不组合成四个 Tab；默认打开 `Skills + Project`。
-- 管理器使用居中的小型 overlay，不占满终端；尺寸随终端自适应。
+- 管理器保持居中的小型 overlay：默认宽度 80、最小宽度 50、最大高度为终端的 80%、外边距 1；外层面板与选中资源行使用当前主题的 `borderAccent`，静态来源标题使用 `borderMuted`，容器内部保持终端默认背景。
 - 所有 UI 文案、状态和提示使用纯英文。
-- 列表行只显示名称、状态、scope 与简短来源；`Enter` 打开当前项详情页，展示完整路径、package、覆盖关系和诊断；详情页 `Esc` 返回列表。
-- `Tab` 切换 Skills/Extensions，`←/→` 切换 Project/Global；标题栏始终高亮当前选择。
+- 列表行显示名称、状态、对齐的 Project / Global 状态列与简短来源；当前项使用紧凑单行 `selectedBg`、accent 左右边缘和 `›` 指针；`Enter` 打开资源详情卡，展示完整路径、package、覆盖关系和诊断；详情页 `Enter` 与 `Esc` 返回列表。
+- 标题栏使用 `Package Manager   [Skills] Tab Extensions   [Project] ←→ Global` 的文本结构；当前选择使用 accent，`Tab` 与 `←→` 使用 dim 小按键标签；`Tab` 切换 Skills/Extensions，`←/→` 切换 Project/Global。
+- `Project` 视图显示对齐的 `Project` 与 `Global` 状态列；标题栏高亮 Project，`Space` 修改 Project 状态。`Global` 视图只显示 Global 相关信息，标题栏高亮 Global，`Space` 修改 Global 状态；Global 状态列保持与 Project 视图相同的最右侧列位。内部宽度低于 64 列时，标题栏与状态列表使用 `P` / `G` 缩写。
+- 底部使用两层信息栏：状态行左侧显示当前位置 `6/24`，右侧显示编辑状态；工具栏使用按键标签展示资源操作，`Tab` 与 `←→` 仅在标题栏展示；Project 工具栏包含 `[r] Inherit`，Global 工具栏省略该操作；窄终端将工具栏自动换成两行并保留全部操作。
 - 切换视图时保留每个视图的搜索词、滚动位置与 pending 修改。
-- `Global` 视图显示全局资源并直接编辑全局设置。
-- `Project` 视图显示当前项目资源在前、全局资源在后；全局资源默认 inherited，直接编辑时写入项目覆盖。
+- `Global` 视图编辑并展示全局资源与 Global 状态。
+- `Project` 视图编辑当前项目设置，同时显示 Project 与 Global 状态列；项目资源排在前，全局资源默认 inherited，直接编辑时写入项目覆盖。
 - 列表按来源分组（每个包一组、每个本地目录一组），来源是辅助信息；不再额外增加 Package 顶层视图。
-- 分组标题只展示统计，不可直接 toggle；具体 resource 行才可 toggle。
-- `/` 进入本地搜索模式，只过滤当前 Tab 中 pi 已检测到的资源，绝不联网；搜索模式下所有字符仅作为查询文本，`Esc` 清空并退出搜索。
+- 每个本地目录与包来源使用同一种固定展开来源分组；标题以静态 `⌄` 开头，左侧显示缩短来源路径、右侧显示统计，具体 resource 行相对标题缩进一层并承载全部操作；Project 视图统计 Project 生效状态，Global 视图统计 Global 状态；长路径使用中间省略号，详情页显示完整路径与完整 package source。
+- `/` 进入本地搜索模式，只过滤当前 Tab 中 pi 已检测到的资源，绝不联网；标题栏下方显示 `⌕ Search: <query>` 紧凑输入栏，查询文本使用 accent；列表只展示含匹配资源的来源容器；搜索模式下所有字符仅作为查询文本，`Esc` 清空并退出搜索。
 - 普通列表模式下 `r` 只对全局继承资源恢复 inherit；搜索模式中的 `r` 只是查询字符。
 - 一个同时提供 extension 和 skill 的包会分别出现在两个 Tab。
 - Project 视图只能移除项目包；全局包在 Project 视图中只能设置/清除项目覆盖，必须切换到 Global 才能卸载。
 - 卸载属于即时包操作，不进入 toggle 的 pending state；执行前必须确认。
 - 移除包后不保留历史；本地资源不执行文件删除。
-- 指示符：`●` 实心（`success` 绿）= enabled，`○` 空心 = disabled；项目三态后缀 `inherit` / `+load` / `-unload`（inherit 用 dim 呈现）。
-- 入口命令为 `/pkg-manager`，v1 不提供别名。
+- 左侧状态符只表示当前 Project 生效状态，使用实心 `●` 或空心 `○`；Project / Global 列只显示文字。列表顶部显示对齐列名 `Project` 与 `Global`。Project 列以 `— (on)` / `— (off)` 表示 inherit 后的生效状态，以 `on` / `off` 表示显式 Project 覆盖；Global 列显示全局状态，`—` 表示资源仅属于 Project。
+- Project 视图中，Global 为 `on` 时，Project 生效 `on` 显示 success `●`，Project 生效 `off` 显示 error `●`。Global 为 `off` 时，Project inherit 显示 muted `○`，显式 Project `on` 显示 success `●`，显式 Project `off` 显示 error `●`。Project-only 资源的 `on` / `off` 分别显示 success / error `●`。
+- Global 视图中，Global `on` 显示 success `●`，Global `off` 显示 muted `○`。
+- 入口命令为 `/pkg-manager`、`/skills-manager`、`/extensions-manager`：`/pkg-manager` 默认打开 Skills + Project；两个定向入口分别打开 Skills + Project 与 Extensions + Project；进入后 `Tab` 仍可切换资源类型。
 - `Esc` 按页面层级处理：详情页返回列表；搜索有内容时先清空；主列表无 pending 时关闭；有 pending 时确认是否丢弃后关闭。
 - 搜索过滤、关闭、改完提示 reload —— 与 `pi config` / `pi-skills-manager` 的交互保持同源。
 - 不做"两层同时可编辑"（双圆点 / 双栏）：无生态先例，且 pi 的数据模型本来就是"一个作用域 = 一个写入目标"。
@@ -117,7 +121,7 @@ pi 本身能识别 `~/.agents/skills`、项目 `.agents/skills`（向上到 git 
 - 首次加载 extension 只读取并解析当前状态，不初始化、不规范化、不修改用户已有 settings。
 - Project 作用域默认 **inherit**：不写任何条目 = 完全继承 Global；只有显式改动才产生项目条目（即 `pi config` 项目模式的行为）。
 - toggle 只先修改内存中的 pending state；没有变化时不写盘。
-- 列表圆点立即预览保存后的状态，并追加 `* unsaved`；详情显示 before → after；底部显示 `N unsaved changes · Ctrl+S Save`。
+- 列表圆点立即预览保存后的状态，已修改资源行末尾追加 warning `*`；详情显示 before → after；状态行右侧显示 `N unsaved changes · [Ctrl+S] Save`。
 - 再次操作回到原始状态时自动删除对应 pending，并移除 `unsaved` 标记。
 - `Ctrl+S` 保存四个视图中的全部 pending；保存前按 scope/type 汇总变化。
 - `Esc` 在存在 pending 时询问是否丢弃全部修改。
@@ -147,19 +151,19 @@ pi 本身能识别 `~/.agents/skills`、项目 `.agents/skills`（向上到 git 
 ### R5 诊断展示 [已决]
 
 - pi 能检测到但有问题的资源仍显示在原分组位置；不静默隐藏。
-- `● enabled`：Pi 解析结果为启用，且没有已知 skill collision/error；`○ disabled`：配置关闭。
-- `◇ shadowed`：配置启用，但被更高优先级的同名 skill 覆盖；详情显示覆盖它的路径，仍允许 toggle。
-- `⚠ error`：资源有可安全取得的诊断错误；详情显示原因。
+- 左侧 `●` / `○` 始终表达当前 Project 生效状态；资源名后追加诊断标记。
+- `◇ shadowed`：资源名后显示 warning `◇`，资源被更高优先级的同名 skill 覆盖；详情显示覆盖它的路径，仍允许 toggle。
+- `⚠ error`：资源名后显示 error `⚠`，资源有可安全取得的诊断错误；详情显示原因。
 
 ### R6 项目 Trust [已决]
 
-- Project 未被 trust 时，Project 视图只读。
+- Project 未被 trust 时，Project 视图只读，标题栏下方显示 `⚠ Project settings require Pi trust` warning；Project 状态列显示 `trust required`，Global 状态列保持可读可编辑。
 - 不自动 trust，不写 `.pi/settings.json`；显示 pi 原生的 trust 提示。
 - 完成 trust 后才允许保存 Project 覆盖。
 
 ### R7 自身保护 [已决]
 
-- `pi-pkg-manager` 自身仍显示，但标记 `🔒 required`。
+- `pi-pkg-manager` 自身仍显示为 `🔒 [in use]`，`[in use]` 使用 warning 标签，Project / Global 状态列按普通全局资源展示。
 - UI 内不可 disable/remove；卸载必须使用外部 `pi remove`。
 
 ## 5. 实现约束

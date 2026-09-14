@@ -11,6 +11,9 @@
   },
   "homepage": "https://github.com/Lnearfar/pi-pkg-manager#readme",
   "type": "module",
+  "engines": {
+    "node": ">=22.19.0"
+  },
   "keywords": [
     "pi-package",
     "pi-extension"

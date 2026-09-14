@@ -101,10 +101,18 @@ export class PackageManagerModel {
 		return this.pending.get(pendingKey(resource, "project"))?.afterOverride ?? this.originalOverride(resource);
 	}
 
-	private globalEnabled(resource: ManagedResource): boolean {
-		const globalResource = this.catalog.global.find((item) => item.type === resource.type && item.path === resource.path);
-		if (!globalResource) return resource.globalEnabled;
+	globalResource(resource: ManagedResource): ManagedResource | undefined {
+		return this.catalog.global.find((item) => item.type === resource.type && item.path === resource.path);
+	}
+
+	globalState(resource: ManagedResource): boolean | undefined {
+		const globalResource = this.globalResource(resource);
+		if (!globalResource) return undefined;
 		return this.pending.get(pendingKey(globalResource, "global"))?.afterEnabled ?? globalResource.enabled;
+	}
+
+	private globalEnabled(resource: ManagedResource): boolean {
+		return this.globalState(resource) ?? resource.globalEnabled;
 	}
 
 	effectiveEnabled(resource: ManagedResource): boolean {

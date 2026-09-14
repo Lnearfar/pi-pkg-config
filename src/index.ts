@@ -4,7 +4,7 @@ import type { ExtensionAPI, ExtensionCommandContext } from "@earendil-works/pi-c
 import { PackageManagerBackend } from "./backend.ts";
 import { PackageManagerModel } from "./model.ts";
 import { PackageManagerComponent, type UiAction } from "./ui.ts";
-import type { ManagedResource, ViewScope } from "./types.ts";
+import type { ManagedResource, ResourceType, ViewScope } from "./types.ts";
 
 const EXTENSION_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -79,7 +79,7 @@ async function savePending(
 	return "continue";
 }
 
-async function runManager(ctx: ExtensionCommandContext): Promise<void> {
+async function runManager(ctx: ExtensionCommandContext, initialType: ResourceType = "skills"): Promise<void> {
 	if (ctx.mode !== "tui") {
 		ctx.ui.notify("/pkg-manager requires TUI mode.", "error");
 		return;
@@ -93,6 +93,7 @@ async function runManager(ctx: ExtensionCommandContext): Promise<void> {
 		return;
 	}
 	const model = new PackageManagerModel(catalog, ctx.cwd, backend.agentDir, ctx.isProjectTrusted());
+	model.type = initialType;
 
 	for (;;) {
 		const action = await ctx.ui.custom<UiAction>(
@@ -154,7 +155,15 @@ async function runManager(ctx: ExtensionCommandContext): Promise<void> {
 
 export default function pkgManagerExtension(pi: ExtensionAPI): void {
 	pi.registerCommand("pkg-manager", {
-		description: "Manage installed Pi skills and extensions",
+		description: "Manage Pi skills and extensions",
 		handler: async (_args, ctx) => runManager(ctx),
+	});
+	pi.registerCommand("skills-manager", {
+		description: "Manage Pi skills",
+		handler: async (_args, ctx) => runManager(ctx, "skills"),
+	});
+	pi.registerCommand("extensions-manager", {
+		description: "Manage Pi extensions",
+		handler: async (_args, ctx) => runManager(ctx, "extensions"),
 	});
 }

@@ -1,4 +1,4 @@
-import type { Theme } from "@earendil-works/pi-coding-agent";
+import type { Theme, ThemeColor } from "@earendil-works/pi-coding-agent";
 import {
 	CURSOR_MARKER,
 	Key,
@@ -16,6 +16,23 @@ export type UiAction =
 	| { type: "close"; pending: boolean }
 	| { type: "save" }
 	| { type: "remove"; resource: ManagedResource };
+
+interface StateCell {
+	text: string;
+	color: ThemeColor;
+}
+
+interface StateCells {
+	project?: StateCell;
+	global: StateCell;
+}
+
+interface StateColumns {
+	width: number;
+	compact: boolean;
+	projectStart?: number;
+	globalStart: number;
+}
 
 export class PackageManagerComponent implements Focusable {
 	focused = false;
@@ -37,9 +54,9 @@ export class PackageManagerComponent implements Focusable {
 	) {
 		this.model = model;
 		this.theme = theme;
-		this.keybindings = keybindings;
 		this.done = done;
 		this.requestRender = requestRender;
+		this.keybindings = keybindings;
 		this.listRowBudget = Math.max(1, listRowBudget);
 	}
 
@@ -127,53 +144,56 @@ export class PackageManagerComponent implements Focusable {
 
 	render(width: number): string[] {
 		if (width < 4) return [" ".repeat(Math.max(0, width))];
-		const w = width;
-		const inner = w - 2;
+		const inner = width - 2;
 		const lines: string[] = [];
 		const border = (text: string) => this.theme.fg("borderAccent", text);
 		const row = (content = "") => {
 			const clipped = truncateToWidth(content, inner, "");
 			return `${border("│")}${clipped}${" ".repeat(Math.max(0, inner - visibleWidth(clipped)))}${border("│")}`;
 		};
+
 		lines.push(border(`╭${"─".repeat(inner)}╮`));
-		lines.push(row(this.renderHeader()));
+		lines.push(row(this.renderHeader(inner)));
 		lines.push(row(this.theme.fg("dim", "─".repeat(inner))));
 		if (this.details) this.renderDetails(row, lines, inner);
-		else this.renderList(row, lines);
+		else this.renderList(row, lines, inner);
 		lines.push(row(this.theme.fg("dim", "─".repeat(inner))));
-		for (const footerLine of this.renderFooter()) lines.push(row(footerLine));
+		for (const footerLine of this.renderFooter(inner)) lines.push(row(footerLine));
 		lines.push(border(`╰${"─".repeat(inner)}╯`));
 		return lines;
 	}
 
-	private renderHeader(): string {
+	private renderHeader(inner: number): string {
+		const compact = inner < 64;
 		const tab = (label: string, active: boolean) =>
-			active ? this.theme.fg("accent", this.theme.bold(`[${label}]`)) : this.theme.fg("dim", ` ${label} `);
+			active ? this.theme.fg("accent", this.theme.bold(`[${label}]`)) : this.theme.fg("dim", label);
 		const scope = (label: string, active: boolean) =>
-			active ? this.theme.fg("accent", this.theme.bold(`[${label}]`)) : this.theme.fg("dim", ` ${label} `);
-		return ` ${this.theme.bold("Package Manager")}  ${tab("Skills", this.model.type === "skills")} ${tab("Extensions", this.model.type === "extensions")}  ${scope("Project", this.model.scope === "project")} ${scope("Global", this.model.scope === "global")}`;
+			active ? this.theme.fg("accent", this.theme.bold(`[${label}]`)) : this.theme.fg("dim", label);
+		const project = compact ? "P" : "Project";
+		const global = compact ? "G" : "Global";
+		return ` ${this.theme.bold("Package Manager")}  ${tab("Skills", this.model.type === "skills")} ${this.keycap("Tab")} ${tab("Extensions", this.model.type === "extensions")}  ${scope(project, this.model.scope === "project")} ${this.keycap("←→")} ${scope(global, this.model.scope === "global")}`;
 	}
 
-	private renderList(row: (content?: string) => string, lines: string[]): void {
+	private renderList(row: (content?: string) => string, lines: string[], inner: number): void {
 		const resources = this.model.resources();
 		const view = this.model.view;
+		const columns = this.stateColumns(inner);
 		if (view.searching) {
 			const marker = this.focused ? CURSOR_MARKER : "";
-			lines.push(row(` Search: ${view.query}${marker}${this.theme.inverse(" ")}`));
+			lines.push(row(this.theme.fg("borderMuted", ` ⌕ Search: `) + this.theme.fg("accent", view.query) + marker + this.theme.inverse(" ")));
 		} else if (view.query) {
-			lines.push(row(` Filter: ${this.theme.fg("accent", view.query)}`));
+			lines.push(row(this.theme.fg("borderMuted", " ⌕ Search: ") + this.theme.fg("accent", view.query)));
 		}
 		if (this.model.scope === "project" && !this.model.projectTrusted) {
-			lines.push(row(this.theme.fg("warning", " Project is not trusted. Trust it with Pi to edit project settings.")));
+			lines.push(row(this.theme.fg("warning", " ⚠ Project settings require Pi trust")));
 		}
+		lines.push(row(this.renderColumnHeader(columns)));
 		if (resources.length === 0) {
-			lines.push(row(""));
-			lines.push(row(this.theme.fg("muted", " No detected resources match this view.")));
-			for (let index = 2; index < this.listRowBudget + 1; index++) lines.push(row(""));
+			lines.push(row(this.theme.fg("muted", " Current view has no detected resources.")));
+			for (let index = 1; index < this.listRowBudget; index++) lines.push(row(""));
 			return;
 		}
 
-		const listRowBudget = this.listRowBudget; // Reserve one stable row for the position indicator.
 		const buildWindow = (start: number) => {
 			const visible: Array<{ resource: ManagedResource; index: number; showGroup: boolean }> = [];
 			let used = 0;
@@ -182,7 +202,7 @@ export class PackageManagerComponent implements Focusable {
 				const resource = resources[index]!;
 				const showGroup = resource.groupKey !== lastGroup;
 				const needed = showGroup ? 2 : 1;
-				if (used + needed > listRowBudget) break;
+				if (used + needed > this.listRowBudget) break;
 				visible.push({ resource, index, showGroup });
 				used += needed;
 				lastGroup = resource.groupKey;
@@ -200,34 +220,126 @@ export class PackageManagerComponent implements Focusable {
 			const { resource } = entry;
 			if (entry.showGroup) {
 				const groupItems = resources.filter((item) => item.groupKey === resource.groupKey);
-				const enabled = groupItems.filter((item) => this.model.effectiveEnabled(item)).length;
-				lines.push(row(this.theme.fg("muted", ` ${resource.groupLabel}  ${enabled}/${groupItems.length} enabled`)));
+				lines.push(row(this.renderGroupHeader(resource, groupItems, inner)));
 			}
-			const selected = entry.index === view.selected;
-			const enabled = this.model.effectiveEnabled(resource);
-			const status = this.status(resource, enabled);
-			const scope = resource.inheritedGlobal ? "global" : resource.metadata.scope === "project" ? "project" : "global";
-			let suffix = scope;
-			if (this.model.scope === "project") {
-				const override = this.model.currentOverride(resource);
-				suffix = resource.inheritedGlobal ? override : override === "inherit" ? "project" : `project ${override}`;
-			}
-			if (resource.selfProtected) suffix = "🔒 required";
-			if (this.model.isPending(resource)) suffix += "  * unsaved";
-			const inherited = this.model.scope === "project" && resource.inheritedGlobal && this.model.currentOverride(resource) === "inherit";
-			const name = selected
-				? this.theme.fg("text", resource.name)
-				: inherited
-					? this.theme.fg("dim", resource.name)
-					: resource.name;
-			const scopeLabel = `${suffix} · ${scope}`;
-			const scopeText = selected ? this.theme.fg("text", scopeLabel) : this.theme.fg("dim", scopeLabel);
-			const text = ` ${selected ? "›" : " "} ${status} ${name}  ${scopeText}`;
-			const selectedText = selected ? this.theme.fg("text", text) : text;
-			lines.push(row(selected ? this.theme.bg("selectedBg", selectedText) : text));
+			lines.push(row(this.renderResource(resource, entry.index === view.selected, columns)));
 		}
-		for (let index = window.used; index < listRowBudget; index++) lines.push(row(""));
-		lines.push(row(this.theme.fg("dim", ` ${view.selected + 1}/${resources.length}`)));
+		for (let index = window.used; index < this.listRowBudget; index++) lines.push(row(""));
+	}
+
+	private stateColumns(inner: number): StateColumns {
+		const width = Math.max(1, inner - 2); // Reserve the selection-edge cell on both sides of every resource row.
+		const compact = inner < 64;
+		const globalWidth = compact ? 4 : 8;
+		const globalStart = Math.max(0, width - globalWidth);
+		if (this.model.scope === "global") return { width, compact, globalStart };
+		const projectWidth = compact ? 9 : 15;
+		const gap = compact ? 1 : 2;
+		const projectStart = Math.max(0, globalStart - gap - projectWidth);
+		return { width, compact, projectStart, globalStart };
+	}
+
+	private renderColumnHeader(columns: StateColumns): string {
+		const cells: StateCells = {
+			project:
+				columns.projectStart === undefined
+					? undefined
+					: { text: columns.compact ? "P" : "Project", color: "borderMuted" },
+			global: { text: columns.compact ? "G" : "Global", color: "borderMuted" },
+		};
+		return ` ${this.composeStateRow("", cells, columns)} `;
+	}
+
+	private renderGroupHeader(resource: ManagedResource, groupItems: ManagedResource[], inner: number): string {
+		const count = this.groupCount(groupItems);
+		const statistics = `${count}/${groupItems.length} enabled`;
+		const available = Math.max(1, inner - visibleWidth(statistics) - 4);
+		const label = this.middleTruncate(resource.groupLabel, available);
+		const left = this.theme.fg("borderMuted", ` ⌄ ${label}`);
+		return `${left}${" ".repeat(Math.max(1, inner - visibleWidth(left) - visibleWidth(statistics)))}${this.theme.fg("muted", statistics)}`;
+	}
+
+	private groupCount(resources: ManagedResource[]): number {
+		if (this.model.scope === "project" && !this.model.projectTrusted) return 0;
+		return resources.filter((resource) => this.model.effectiveEnabled(resource)).length;
+	}
+
+	private renderResource(resource: ManagedResource, selected: boolean, columns: StateColumns): string {
+		const state = this.stateCells(resource, columns.compact);
+		const nameColor: ThemeColor = selected ? "text" : "text";
+		const markers = this.diagnosticMarkers(resource);
+		const inUse = resource.selfProtected ? ` 🔒 ${this.tag("in use", "warning")}` : "";
+		const pending = this.model.isPending(resource) ? ` ${this.theme.fg("warning", "*")}` : "";
+		const prefix = `${selected ? "› " : "  "}${this.status(resource)} ${this.theme.fg(nameColor, resource.name)}${markers}${inUse}${pending}`;
+		const body = this.composeStateRow(prefix, state, columns);
+		if (selected) {
+			return `${this.theme.fg("borderAccent", "▌")}${this.theme.bg("selectedBg", body)}${this.theme.fg("borderAccent", "▐")}`;
+		}
+		return ` ${body} `;
+	}
+
+	private composeStateRow(prefix: string, cells: StateCells, columns: StateColumns): string {
+		const nameEnd = columns.projectStart ?? columns.globalStart;
+		let result = this.pad(prefix, nameEnd);
+		if (columns.projectStart !== undefined) {
+			const projectWidth = Math.max(0, columns.globalStart - columns.projectStart - (columns.compact ? 1 : 2));
+			const project = cells.project ? this.theme.fg(cells.project.color, cells.project.text) : "";
+			result += this.pad(project, projectWidth);
+			result += " ".repeat(columns.compact ? 1 : 2);
+		}
+		result += this.pad(this.theme.fg(cells.global.color, cells.global.text), Math.max(0, columns.width - columns.globalStart));
+		return this.pad(result, columns.width);
+	}
+
+	private stateCells(resource: ManagedResource, compact: boolean): StateCells {
+		if (this.model.scope === "global") {
+			return { global: { text: this.model.effectiveEnabled(resource) ? "on" : "off", color: "muted" } };
+		}
+
+		const global = this.model.globalState(resource);
+		if (!this.model.projectTrusted) {
+			return {
+				project: { text: compact ? "trust" : "trust required", color: "warning" },
+				global: { text: global === undefined ? "—" : global ? "on" : "off", color: "muted" },
+			};
+		}
+
+		const effective = this.model.effectiveEnabled(resource);
+		if (!resource.inheritedGlobal) {
+			return {
+				project: { text: effective ? "on" : "off", color: "text" },
+				global: { text: global === undefined ? "—" : global ? "on" : "off", color: "muted" },
+			};
+		}
+
+		const override = this.model.currentOverride(resource);
+		const project =
+			override === "inherit"
+				? { text: `— (${effective ? "on" : "off"})`, color: "muted" as ThemeColor }
+				: { text: effective ? "on" : "off", color: "text" as ThemeColor };
+		return {
+			project,
+			global: { text: global ? "on" : "off", color: "muted" },
+		};
+	}
+
+	private status(resource: ManagedResource): string {
+		if (this.model.scope === "global") {
+			return this.model.effectiveEnabled(resource) ? this.theme.fg("success", "●") : this.theme.fg("muted", "○");
+		}
+		if (!this.model.projectTrusted) return this.theme.fg("warning", "?");
+		const effective = this.model.effectiveEnabled(resource);
+		if (!resource.inheritedGlobal) return this.theme.fg(effective ? "success" : "error", "●");
+		const global = this.model.globalState(resource);
+		if (global === false && this.model.currentOverride(resource) === "inherit") return this.theme.fg("muted", "○");
+		return this.theme.fg(effective ? "success" : "error", "●");
+	}
+
+	private diagnosticMarkers(resource: ManagedResource): string {
+		const markers: string[] = [];
+		if (this.isShadowed(resource)) markers.push(this.theme.fg("warning", "◇"));
+		if (resource.diagnostics.some((item) => item.type === "error")) markers.push(this.theme.fg("error", "⚠"));
+		return markers.length > 0 ? ` ${markers.join(" ")}` : "";
 	}
 
 	private isShadowed(resource: ManagedResource): boolean {
@@ -236,62 +348,117 @@ export class PackageManagerComponent implements Focusable {
 		);
 	}
 
-	private status(resource: ManagedResource, enabled: boolean): string {
-		const error = resource.diagnostics.some((item) => item.type === "error");
-		if (error) return this.theme.fg("error", "⚠");
-		if (this.isShadowed(resource) && enabled) return this.theme.fg("warning", "◇");
-		return enabled ? this.theme.fg("success", "●") : this.theme.fg("dim", "○");
-	}
-
 	private renderDetails(row: (content?: string) => string, lines: string[], inner: number): void {
 		const resource = this.model.selectedResource();
 		if (!resource) return;
-		const enabled = this.model.effectiveEnabled(resource);
-		const hasError = resource.diagnostics.some((item) => item.type === "error");
-		const state = hasError ? "error" : this.isShadowed(resource) && enabled ? "shadowed" : enabled ? "enabled" : "disabled";
-		lines.push(row(` ${this.theme.bold(resource.name)}  ${this.status(resource, enabled)} ${state}`));
+		const cells = this.stateCells(resource, inner < 64);
 		const detailLines = [
+			` ${this.status(resource)} ${resource.name}${resource.selfProtected ? "  🔒 in use" : ""}`,
+			...(this.model.scope === "project" ? [` Project: ${cells.project?.text ?? "—"}`] : []),
+			` Global: ${cells.global.text}`,
 			` Type: ${resource.type}`,
-			` Scope: ${this.model.scope === "project" && resource.inheritedGlobal ? "Global (project view)" : resource.metadata.scope === "project" ? "Project" : "Global"}`,
 			` Source: ${resource.groupLabel}`,
 			...(resource.packageSource ? [` Package: ${resource.packageSource}`] : []),
 			` Path: ${resource.path}`,
-			` Override: ${this.model.scope === "project" ? this.model.currentOverride(resource) : "not applicable"}`,
 		];
 		for (const detail of detailLines) lines.push(...wrapTextWithAnsi(detail, inner).map((part) => row(part)));
 		const pending = this.model.pendingChanges().find((change) => change.resource.id === resource.id && change.scope === this.model.scope);
 		if (pending) {
-			const usesOverride = pending.scope === "project" && pending.resource.inheritedGlobal;
-			const before = usesOverride
+			const before = pending.scope === "project" && pending.resource.inheritedGlobal
 				? pending.beforeOverride
 				: pending.beforeEnabled
-					? "enabled"
-					: "disabled";
-			const after = usesOverride ? pending.afterOverride : pending.afterEnabled ? "enabled" : "disabled";
-			lines.push(row(this.theme.fg("warning", ` Unsaved: ${before} -> ${after}`)));
+					? "on"
+					: "off";
+			const after = pending.scope === "project" && pending.resource.inheritedGlobal
+				? pending.afterOverride
+				: pending.afterEnabled
+					? "on"
+					: "off";
+			lines.push(row(this.theme.fg("warning", ` Pending: ${before} → ${after}`)));
 		}
-		if (resource.selfProtected) lines.push(row(this.theme.fg("warning", " 🔒 required: use external `pi remove` to uninstall this manager.")));
-		if (resource.diagnostics.length === 0) lines.push(row(this.theme.fg("dim", " Diagnostics: none")));
+		if (resource.selfProtected) lines.push(row(this.theme.fg("warning", " 🔒 In use by this manager.")));
+		if (resource.diagnostics.length === 0) lines.push(row(this.theme.fg("dim", " Diagnostics: clear")));
 		for (const diagnostic of resource.diagnostics) {
-			lines.push(...wrapTextWithAnsi(` ${diagnostic.type.toUpperCase()}: ${diagnostic.message}`, inner).map((part) => row(this.theme.fg(diagnostic.type === "error" ? "error" : "warning", part))));
+			lines.push(
+				...wrapTextWithAnsi(` ${diagnostic.type.toUpperCase()}: ${diagnostic.message}`, inner).map((part) =>
+					row(this.theme.fg(diagnostic.type === "error" ? "error" : "warning", part)),
+				),
+			);
 			if (diagnostic.collision?.loserPath === resource.path) {
 				lines.push(row(this.theme.fg("dim", ` Shadowed by: ${diagnostic.collision.winnerPath}`)));
 			} else if (diagnostic.collision?.winnerPath === resource.path) {
 				lines.push(row(this.theme.fg("dim", ` Shadows: ${diagnostic.collision.loserPath}`)));
 			}
 		}
-		lines.push(row(""));
-		lines.push(row(this.theme.fg("dim", " Esc or Enter: back")));
 	}
 
-	private renderFooter(): string[] {
-		if (this.model.view.searching) return [" Type to search locally · Backspace Delete · Esc Clear"];
+	private renderFooter(inner: number): string[] {
+		if (this.details) return [this.statusLine(inner), ...this.actionLines([this.action("Back", "Enter"), this.action("Back", "Esc")], inner)];
+		if (this.model.view.searching) {
+			return [
+				this.statusLine(inner),
+				...this.actionLines([this.action("Delete", "Backspace"), this.action("Clear", "Esc")], inner),
+			];
+		}
+		const actions = [this.action("Move", "↑↓"), this.action("Toggle", "Space")];
+		if (this.model.scope === "project") actions.push(this.action("Inherit", "r"));
+		actions.push(this.action("Search", "/"), this.action("Details", "Enter"), this.action("Remove", "Del"), this.action("Close", "Esc"));
+		return [this.statusLine(inner), ...this.actionLines(actions, inner)];
+	}
+
+	private statusLine(inner: number): string {
+		const resources = this.model.resources();
+		const index = resources.length === 0 ? "0/0" : `${this.model.view.selected + 1}/${resources.length}`;
 		const pending = this.model.pending.size;
-		const save = pending > 0 ? `${pending} unsaved changes · Ctrl+S Save` : "Ready to edit";
-		return [
-			` ${save} · ↑↓ Move · Space Toggle · r Inherit`,
-			" Tab Type · ←→ Scope · / Search · Enter Details · Del Remove · Esc Close",
-		];
+		const right =
+			pending > 0
+				? `${this.theme.fg("warning", `${pending} unsaved changes`)} · ${this.keycap("Ctrl+S", "accent")} ${this.theme.fg("accent", "Save")}`
+				: this.theme.fg("accent", this.theme.bold("Ready to edit"));
+		const left = this.theme.fg("dim", ` ${index}`);
+		return `${left}${" ".repeat(Math.max(1, inner - visibleWidth(left) - visibleWidth(right)))}${right}`;
+	}
+
+	private action(label: string, key: string): string {
+		return `${this.keycap(key)} ${this.theme.fg("text", label)}`;
+	}
+
+	private actionLines(actions: string[], inner: number): string[] {
+		const lines: string[] = [];
+		let current = " ";
+		for (const action of actions) {
+			const candidate = current.trim().length === 0 ? ` ${action}` : `${current}  ${action}`;
+			if (visibleWidth(candidate) <= inner || current.trim().length === 0) {
+				current = candidate;
+			} else {
+				lines.push(current);
+				current = ` ${action}`;
+			}
+		}
+		if (current.trim().length > 0) lines.push(current);
+		return lines;
+	}
+
+	private keycap(label: string, color: ThemeColor = "muted"): string {
+		return this.theme.bg("selectedBg", this.theme.fg(color, ` ${label} `));
+	}
+
+	private tag(label: string, color: ThemeColor): string {
+		return this.theme.bg("selectedBg", this.theme.fg(color, ` ${label} `));
+	}
+
+	private pad(text: string, width: number): string {
+		const clipped = truncateToWidth(text, Math.max(0, width), "");
+		return `${clipped}${" ".repeat(Math.max(0, width - visibleWidth(clipped)))}`;
+	}
+
+	private middleTruncate(text: string, width: number): string {
+		if (visibleWidth(text) <= width) return text;
+		if (width <= 1) return "…".slice(0, width);
+		const characters = Array.from(text);
+		const left = Math.ceil((width - 1) / 2);
+		const right = Math.floor((width - 1) / 2);
+		const suffix = right > 0 ? characters.slice(-right).join("") : "";
+		return `${characters.slice(0, left).join("")}…${suffix}`;
 	}
 
 	invalidate(): void {}
