@@ -95,7 +95,7 @@ pi 本身能识别 `~/.agents/skills`、项目 `.agents/skills`（向上到 git 
 - 列表行显示名称、状态、对齐的 Project / Global 状态列与简短来源；当前项使用紧凑单行 `selectedBg`、accent 左右边缘和 `›` 指针；`Enter` 打开资源详情卡，展示完整路径、package、覆盖关系和诊断；详情页 `Enter` 与 `Esc` 返回列表。
 - 标题栏使用 `Package Manager   [Skills] Tab Extensions   [Project] ←→ Global` 的文本结构；当前选择使用 accent，`Tab` 与 `←→` 使用 dim 小按键标签；`Tab` 切换 Skills/Extensions，`←/→` 切换 Project/Global。
 - `Project` 视图显示对齐的 `Project` 与 `Global` 状态列；标题栏高亮 Project，`Space` 修改 Project 状态。`Global` 视图只显示 Global 相关信息，标题栏高亮 Global，`Space` 修改 Global 状态；Global 状态列保持与 Project 视图相同的最右侧列位。内部宽度低于 64 列时，标题栏与状态列表使用 `P` / `G` 缩写。
-- 底部使用两层信息栏：状态行左侧显示当前位置 `6/24`，右侧显示编辑状态；工具栏使用按键标签展示资源操作，`Tab` 与 `←→` 仅在标题栏展示；Project 工具栏显示 `[Space] Cycle`，Global 工具栏显示 `[Space] Toggle`；窄终端将工具栏自动换成两行并保留全部操作。
+- 底部使用两层信息栏：状态行左侧显示当前位置 `6/24`，右侧显示编辑状态；工具栏使用按键标签展示资源操作，`Tab` 与 `←→` 仅在标题栏展示；工具栏显示 `[Space] on/off`；窄终端将工具栏自动换成两行并保留全部操作。
 - 切换视图时保留每个视图的搜索词、滚动位置与 pending 修改。
 - `Global` 视图编辑并展示全局资源与 Global 状态。
 - `Project` 视图编辑当前项目设置，同时显示 Project 与 Global 状态列；项目资源排在前，全局资源默认 inherited，直接编辑时写入项目覆盖。

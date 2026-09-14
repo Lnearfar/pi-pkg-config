@@ -404,10 +404,7 @@ export class PackageManagerComponent implements Focusable {
 				...this.actionLines([this.action("Delete", "Backspace"), this.action("Clear", "Esc")], inner),
 			];
 		}
-		const actions = [
-			this.action("Move", "↑↓"),
-			this.action(this.model.scope === "project" ? "Cycle" : "Toggle", "Space"),
-		];
+		const actions = [this.action("Move", "↑↓"), this.action("on/off", "Space")];
 		actions.push(this.action("Search", "/"), this.action("Details", "Enter"), this.action("Remove", "Del"), this.action("Close", "Esc"));
 		return [this.statusLine(inner), ...this.actionLines(actions, inner)];
 	}
