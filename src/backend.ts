@@ -1,6 +1,6 @@
 import { existsSync } from "node:fs";
 import { homedir } from "node:os";
-import { basename, dirname, relative, resolve } from "node:path";
+import { basename, dirname, join, relative, resolve } from "node:path";
 import {
 	DefaultPackageManager,
 	SettingsManager,
@@ -45,9 +45,16 @@ function shortPath(path: string, cwd: string, preferCwd: boolean): string {
 	return !fromCwd.startsWith("..") ? `./${fromCwd}` : path;
 }
 
-function groupLabel(metadata: PathMetadata, cwd: string): string {
+function sourceRoot(metadata: PathMetadata, path: string): string | undefined {
+	if (!metadata.baseDir) return undefined;
+	const [first] = relative(metadata.baseDir, path).split(/[\\/]/);
+	return first === "skills" ? join(metadata.baseDir, "skills") : metadata.baseDir;
+}
+
+function groupLabel(metadata: PathMetadata, path: string, cwd: string): string {
 	if (metadata.origin === "package") return metadata.source;
-	if (metadata.baseDir) return `Local ${shortPath(metadata.baseDir, cwd, metadata.scope === "project")}`;
+	const root = sourceRoot(metadata, path);
+	if (root) return `Local ${shortPath(root, cwd, metadata.scope === "project")}`;
 	return metadata.scope === "project" ? "Project settings" : "Global settings";
 }
 
@@ -151,7 +158,7 @@ function mapResolved(
 				inheritedGlobal,
 				packageSource: resource.metadata.origin === "package" ? resource.metadata.source : undefined,
 				groupKey,
-				groupLabel: groupLabel(resource.metadata, cwd),
+				groupLabel: groupLabel(resource.metadata, path, cwd),
 				diagnostics,
 				selfProtected: selfProtected(resource, extensionRoot),
 			});

@@ -111,8 +111,8 @@ test("project sources shorten to a cwd-relative path while global sources use th
 
 		const backend = new PackageManagerBackend(cwd, true, "/extension");
 		const catalog = await backend.resolve();
-		assert.equal(catalog.project.find((resource) => resource.name === "project-skill")?.groupLabel, "Local ./.agents");
-		assert.equal(catalog.project.find((resource) => resource.name === "global-skill")?.groupLabel, "Local ~/.pi/agent");
+		assert.equal(catalog.project.find((resource) => resource.name === "project-skill")?.groupLabel, "Local ./.agents/skills");
+		assert.equal(catalog.project.find((resource) => resource.name === "global-skill")?.groupLabel, "Local ~/.pi/agent/skills");
 	} finally {
 		if (previousHome === undefined) delete process.env.HOME;
 		else process.env.HOME = previousHome;
