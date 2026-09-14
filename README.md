@@ -2,13 +2,13 @@
 
 # pi-pkg-manager
 
-*Manage Pi skills and extensions without leaving Pi.*
+*Control Pi skills and extensions from one TUI.*
 
 [Features](#features) · [Install](#install) · [Use it](#use-it) · [Scopes](#scopes) · [Safety](#safety) · [Development](#development)
 
 </div>
 
-`pi-pkg-manager` is a local-first Pi extension for reviewing and managing the skills and extensions that **Pi already detects**. It provides resource-level enablement, Project overrides, and confirmed package removal in one small TUI.
+`pi-pkg-manager` manages the Skills and Extensions in Pi's resolved catalog. It stages resource-level state changes, applies Project overrides, shows resolved details, and removes installed packages with confirmation.
 
 <div align="center">
   <img src="docs/images/pkg-manager.png" alt="pi-pkg-manager running in Pi with the Skills and Project views selected" width="900">
@@ -17,18 +17,18 @@
 </div>
 
 > [!NOTE]
-> This is not a package marketplace. It never searches online, downloads packages, installs packages, or checks for updates.
+> This interface covers local search, resource state, Project overrides, details, and package removal. Pi's package commands handle discovery, installation, downloads, and updates.
 
 ## Features
 
-- **Manage individual resources** — enable or disable detected Skills and Extensions.
-- **Work at the right scope** — edit Global settings or create Project-level `load` / `unload` overrides.
-- **Preview before writing** — changes remain staged until `Ctrl+S`; undo them with `Esc`.
-- **Inspect what Pi sees** — search locally and open details for the path, source, override state, and diagnostics.
-- **Remove packages deliberately** — review the affected resources, then confirm removal from the active scope.
-- **Protect your configuration** — merge unrelated external settings changes and write through a lock plus atomic replacement.
+- **Control individual resources** — enable or disable each detected Skill and Extension.
+- **Apply the right scope** — edit Global settings and create Project `load` / `unload` overrides.
+- **Review staged changes** — `Ctrl+S` reviews and saves the transaction; `Esc` discards it.
+- **Inspect Pi's resolution** — search locally and open details for paths, sources, overrides, and diagnostics.
+- **Remove installed packages** — review every affected resource before confirming removal from the active scope.
+- **Preserve settings integrity** — merge unrelated external edits and save through a lock plus atomic replacement.
 
-The manager itself is marked required and cannot be disabled or removed from its own interface.
+`pi-pkg-manager` is required inside its own interface.
 
 ## Install
 
@@ -38,83 +38,71 @@ Install globally from GitHub:
 pi install git:github.com/Lnearfar/pi-pkg-manager
 ```
 
-Or install it only for the current project:
+Install for the current project:
 
 ```bash
 pi install git:github.com/Lnearfar/pi-pkg-manager -l
 ```
 
-Start a new Pi session, then open the manager:
+Start a new Pi session and run:
 
 ```text
 /pkg-manager
 ```
 
 > [!TIP]
-> The manager opens in **Skills → Project**. It shows the current Pi configuration as-is; opening it never initializes or rewrites your settings.
+> The manager opens in **Skills → Project** and shows the current Pi configuration immediately.
 
 ## Use it
 
-A typical change takes four steps:
-
 1. Run `/pkg-manager`.
 2. Select a Skill or Extension with `↑` / `↓`.
-3. Press `Space` to stage the new state. The list immediately shows the preview as `* unsaved`.
-4. Press `Ctrl+S`, review the merged change, and decide whether to reload Pi now.
+3. Press `Space` to stage a state change.
+4. Press `Ctrl+S`, review the merged candidate, and choose Pi reload timing.
 
 | Key | Action |
 |---|---|
 | `Tab` | Switch Skills / Extensions |
 | `←` / `→` | Switch Project / Global |
 | `↑` / `↓` | Navigate resources |
-| `Space` | Stage enable/disable |
+| `Space` | Stage enablement state |
 | `r` | Restore inherit for a Global resource in Project view |
-| `/` | Search detected resources locally |
+| `/` | Search resolved resources locally |
 | `Enter` | Open resource details |
 | `Delete` | Review package removal |
-| `Ctrl+S` | Review and save every staged change |
+| `Ctrl+S` | Review and save staged changes |
 | `Esc` | Clear search, return, discard, or close |
 
 ## Scopes
 
-| View | What you see | What a change affects |
+| View | Resources | Change target |
 |---|---|---|
 | **Global** | Resources resolved from the global Pi environment | Global Pi settings |
-| **Project** | Project resources first, then inherited Global resources | The current project's settings and overrides |
+| **Project** | Project resources followed by inherited Global resources | Current project settings and overrides |
 
-Project resources have their own enabled state. Global resources are inherited by default: changing one in Project creates an explicit `load` or `unload` override, while `r` removes that override and restores `inherit`.
+Global resources start in the Project view with the `inherit` state. A Project change creates an explicit `load` or `unload` override. Press `r` to restore `inherit`.
 
 > [!IMPORTANT]
-> Project settings are read-only until Pi trusts the project. `pi-pkg-manager` never auto-trusts a project or writes `.pi/settings.json` while it is untrusted.
+> Project settings become editable after Pi trusts the project.
 
 ## Remove a package
 
-Press `Delete` on a resource supplied by an installed package. The confirmation shows the package, current scope, and every affected Skill and Extension.
+Press `Delete` on a resource supplied by an installed package. The confirmation lists the package, active scope, and affected Skills and Extensions.
 
-- Only the package configured in the active scope can be removed.
-- Package removal is immediate and separate from staged resource toggles.
-- Settings are persisted **before** npm/git-managed files are cleaned up.
-- A local package source loses its Pi settings entry, but its local files are not deleted.
-- Pending resource changes for the removed package are discarded across views.
+- The active scope owns the removal operation.
+- Removal completes immediately and stays separate from staged resource changes.
+- Settings persist before npm or git managed files are cleaned up.
+- Local package removal updates the Pi settings entry and keeps source files in place.
+- Removal clears staged resource changes for that package across every view.
 
 ## Safety
 
-Pi remains the source of truth for resource discovery and resolution. The extension uses Pi's own package and settings APIs rather than maintaining a second scanner.
+Pi resolves and discovers every displayed resource. The extension uses Pi's package and settings APIs for the same resolution and provenance model.
 
-```mermaid
-flowchart LR
-    A["/pkg-manager"] --> B["Review in the TUI"]
-    B --> C["Stage resource changes"]
-    C --> D["Merge with latest settings"]
-    D --> E["Lock + atomic save"]
-    E --> F["Reload now or later"]
-```
-
-- Missing package sources are skipped during resolution, so opening or searching does not trigger a download.
-- Global and Project changes save independently.
-- Unrelated external settings edits are retained in the reviewed candidate.
-- Temporary files and locks are cleaned up; no backup, history, or cache files are retained.
-- After saving or removing a package, Pi asks whether to reload. If you decline, the change remains saved and Pi reminds you to run `/reload` later.
+- The resolver skips missing package paths during opening and search.
+- Save transactions retain unrelated external settings edits.
+- Same-directory temporary files and locks support atomic saves and cleanup.
+- Pi offers reload after saving or removing a package. Choosing later keeps the saved change and shows `/reload`.
 
 ## Development
 
@@ -137,11 +125,11 @@ CONTEXT.md            Project terminology
 ## Compatibility
 
 - Validated with Pi `0.85.1`.
-- v1 manages **Skills** and **Extensions**; prompts and themes are outside this interface.
-- Search is local filtering of Pi-detected resources, not an online package search.
-- Pi `0.85.1` does not safely expose current extension runtime diagnostics. Extension diagnostics are limited to safe path checks; skill validation and collision diagnostics use Pi's public skill loader.
-- Project overrides for global local resources can contain absolute paths, so moving a resource can invalidate its override.
-- `/pkg-manager` requires Pi's TUI mode.
+- This interface manages **Skills** and **Extensions**. Pi's existing interfaces cover prompts and themes.
+- Search filters the resources Pi detects locally.
+- Extension diagnostics use safe path checks. Skill validation and collision diagnostics use Pi's public skill loader.
+- Project overrides can contain absolute paths; move the resource and refresh its override when its location changes.
+- `/pkg-manager` runs in Pi's TUI mode.
 
 ## Documentation
 

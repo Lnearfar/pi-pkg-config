@@ -45,3 +45,15 @@ test("overlay rendering never exceeds the width requested by Pi", () => {
 		for (const line of component.render(width)) assert.ok(visibleWidth(line) <= width, `${visibleWidth(line)} > ${width}`);
 	}
 });
+
+test("selected inherited resources use the readable text foreground", () => {
+	const taggedTheme = {
+		fg: (color: string, text: string) => `<${color}>${text}</${color}>`,
+		bg: (color: string, text: string) => `<${color}>${text}</${color}>`,
+		bold: (text: string) => text,
+		inverse: (text: string) => text,
+	} as unknown as Theme;
+	const component = new PackageManagerComponent(model(), taggedTheme, keybindings, () => {}, () => {}, 3);
+	const selectedLine = component.render(500).find((line) => line.includes("a-very-long-resource-name"));
+	assert.ok(selectedLine?.includes("<text>a-very-long-resource-name</text>"));
+});

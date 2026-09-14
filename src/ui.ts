@@ -215,9 +215,16 @@ export class PackageManagerComponent implements Focusable {
 			if (resource.selfProtected) suffix = "🔒 required";
 			if (this.model.isPending(resource)) suffix += "  * unsaved";
 			const inherited = this.model.scope === "project" && resource.inheritedGlobal && this.model.currentOverride(resource) === "inherit";
-			const name = inherited ? this.theme.fg("dim", resource.name) : resource.name;
-			const text = ` ${selected ? "›" : " "} ${status} ${name}  ${this.theme.fg("dim", `${suffix} · ${scope}`)}`;
-			lines.push(row(selected ? this.theme.bg("selectedBg", text) : text));
+			const name = selected
+				? this.theme.fg("text", resource.name)
+				: inherited
+					? this.theme.fg("dim", resource.name)
+					: resource.name;
+			const scopeLabel = `${suffix} · ${scope}`;
+			const scopeText = selected ? this.theme.fg("text", scopeLabel) : this.theme.fg("dim", scopeLabel);
+			const text = ` ${selected ? "›" : " "} ${status} ${name}  ${scopeText}`;
+			const selectedText = selected ? this.theme.fg("text", text) : text;
+			lines.push(row(selected ? this.theme.bg("selectedBg", selectedText) : text));
 		}
 		for (let index = window.used; index < listRowBudget; index++) lines.push(row(""));
 		lines.push(row(this.theme.fg("dim", ` ${view.selected + 1}/${resources.length}`)));
@@ -280,7 +287,7 @@ export class PackageManagerComponent implements Focusable {
 	private renderFooter(): string[] {
 		if (this.model.view.searching) return [" Type to search locally · Backspace Delete · Esc Clear"];
 		const pending = this.model.pending.size;
-		const save = pending > 0 ? `${pending} unsaved changes · Ctrl+S Save` : "No unsaved changes";
+		const save = pending > 0 ? `${pending} unsaved changes · Ctrl+S Save` : "Ready to edit";
 		return [
 			` ${save} · ↑↓ Move · Space Toggle · r Inherit`,
 			" Tab Type · ←→ Scope · / Search · Enter Details · Del Remove · Esc Close",
