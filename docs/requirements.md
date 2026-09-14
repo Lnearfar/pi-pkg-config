@@ -92,7 +92,7 @@ pi 本身能识别 `~/.agents/skills`、项目 `.agents/skills`（向上到 git 
 - 两个选择器互相独立，不组合成四个 Tab；默认打开 `Skills + Project`。
 - 管理器保持居中的小型 overlay：默认宽度 80、最小宽度 50、最大高度为终端的 80%、外边距 1；外层面板与选中资源行使用当前主题的 `borderAccent`，静态来源标题使用 `borderMuted`，容器内部保持终端默认背景。
 - 所有 UI 文案、状态和提示使用纯英文。
-- 列表行显示名称、状态、对齐的 Project / Global 状态列与简短来源；当前项使用紧凑单行 `selectedBg`、accent 左右边缘和 `›` 指针；`Enter` 打开资源详情卡，展示完整路径、package、覆盖关系和诊断；详情页 `Enter` 与 `Esc` 返回列表。
+- 列表行显示名称、状态、对齐的 Project / Global 状态列与简短来源；当前项使用紧凑单行 `selectedBg`、accent 左右边缘和 `›` 指针；`Enter` 打开资源详情卡，展示名称、skill description、完整路径、package、覆盖关系和诊断；详情页 `Enter` 与 `Esc` 返回列表。
 - 标题栏使用 `Package Manager   [Skills] Tab Extensions   [Project] ←→ Global` 的文本结构；当前选择使用 accent，`Tab` 与 `←→` 使用 dim 小按键标签；`Tab` 切换 Skills/Extensions，`←/→` 切换 Project/Global。
 - `Project` 视图显示对齐的 `Project` 与 `Global` 状态列；标题栏高亮 Project，`Space` 修改 Project 状态。`Global` 视图只显示 Global 相关信息，标题栏高亮 Global，`Space` 修改 Global 状态；Global 状态列保持与 Project 视图相同的最右侧列位。内部宽度低于 64 列时，标题栏与状态列表使用 `P` / `G` 缩写。
 - 底部使用两层信息栏：状态行左侧显示当前位置 `6/24`，右侧显示编辑状态；工具栏使用按键标签展示资源操作，`Tab` 与 `←→` 仅在标题栏展示；工具栏显示 `[Space] on/off`；窄终端将工具栏自动换成两行并保留全部操作。
@@ -100,7 +100,7 @@ pi 本身能识别 `~/.agents/skills`、项目 `.agents/skills`（向上到 git 
 - `Global` 视图编辑并展示全局资源与 Global 状态。
 - `Project` 视图编辑当前项目设置，同时显示 Project 与 Global 状态列；项目资源排在前，全局资源默认 inherited，直接编辑时写入项目覆盖。
 - 列表按来源分组（每个包一组、每个本地目录一组），来源是辅助信息；不再额外增加 Package 顶层视图。
-- 每个本地目录与包来源使用同一种固定展开来源分组；标题以静态 `⌄` 开头，显示缩短来源路径，后面紧跟一个空格与 `N/M enabled` 统计，具体 resource 行相对标题缩进一层并承载全部操作；Project 视图统计 Project 生效状态，Global 视图统计 Global 状态，Extensions 视图省略统计；项目内资源使用相对当前目录的 `./` 路径，全局资源使用 `~` 路径，长路径使用中间省略号，详情页显示完整路径与完整 package source。
+- 每个本地目录与包来源使用同一种固定展开来源分组；标题以静态 `⌄` 开头，显示缩短来源路径，后面紧跟一个空格与 `N/M enabled` 统计，具体 resource 行相对标题缩进一层并承载全部操作；Project 视图统计 Project 生效状态，Global 视图统计 Global 状态，Extensions 视图省略统计；只有一个 extension 的来源省略 `⌄` 标题，直接以来源名作为单行名称，文件名不再显示；项目内资源使用相对当前目录的 `./` 路径，全局资源使用 `~` 路径，长路径使用中间省略号，详情页显示完整路径与完整 package source。
 - `/` 进入本地搜索模式，只过滤当前 Tab 中 pi 已检测到的资源，绝不联网；标题栏下方显示 `⌕ Search: <query>` 紧凑输入栏，查询文本使用 accent；列表只展示含匹配资源的来源容器；搜索模式下所有字符仅作为查询文本，`Esc` 清空并退出搜索。
 - 列表模式下的 `Space` 只作用于列表，搜索模式中的 `Space` 是查询字符。
 - 一个同时提供 extension 和 skill 的包会分别出现在两个 Tab。

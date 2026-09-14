@@ -143,28 +143,15 @@ test("group statistics follow the source label with a single space", () => {
 });
 
 test("Extensions view omits group statistics", () => {
-	const base = model().catalog.global[0]!;
-	const resource: ManagedResource = {
-		...base,
-		id: "extensions:/tmp/example.ts",
-		type: "extensions",
-		path: "/tmp/example.ts",
-	};
-	const state = new PackageManagerModel(
-		{ global: [resource], project: [resource], globalSettings: {}, projectSettings: {} },
-		"/repo",
-		"/agent",
-		true,
-	);
+	const state = extensionModel(["alpha.ts", "beta.ts"]);
 	state.type = "extensions";
-	const component = new PackageManagerComponent(state, theme, keybindings, () => {}, () => {}, 3);
+	const component = new PackageManagerComponent(state, theme, keybindings, () => {}, () => {}, 4);
 	const output = component.render(120).join("\n");
-	assert.match(output, /⌄ A very long global source label/);
+	assert.match(output, /⌄ npm:pi-demo/);
 	assert.doesNotMatch(output, /enabled/);
 });
 
-test("selected rows keep their background when a long name is truncated", () => {
-	const resource: ManagedResource = {
+test("selected rows keep their background when a long name is truncated", () => {	const resource: ManagedResource = {
 		...model().catalog.global[0]!,
 		name: "an-extremely-long-resource-name-that-overflows-the-name-column",
 	};
@@ -188,4 +175,64 @@ test("selected rows keep their background when a long name is truncated", () => 
 		assert.ok(!selected[0]!.includes("\x1b[0m"), `full style reset in the selected row at width ${width}`);
 		for (const line of lines) assert.ok(visibleWidth(line) <= width, `${visibleWidth(line)} > ${width}`);
 	}
+});
+
+function extensionModel(names: string[]): PackageManagerModel {
+	const resources: ManagedResource[] = names.map((name, index) => ({
+		id: `extensions:/pkg/${name}`,
+		type: "extensions" as const,
+		path: `/pkg/${name}`,
+		name,
+		enabled: true,
+		globalEnabled: true,
+		metadata: { source: "npm:pi-demo", scope: "user", origin: "package", baseDir: "/pkg" },
+		inheritedGlobal: true,
+		packageSource: "npm:pi-demo",
+		groupKey: "package:npm:pi-demo",
+		groupLabel: "npm:pi-demo",
+		diagnostics: [],
+		selfProtected: false,
+	}));
+	return new PackageManagerModel(
+		{ global: resources, project: resources, globalSettings: {}, projectSettings: {} },
+		"/repo",
+		"/agent",
+		true,
+	);
+}
+
+test("a single-extension package renders as one labelled row without a group header", () => {
+	const state = extensionModel(["index.ts"]);
+	state.type = "extensions";
+	const component = new PackageManagerComponent(state, theme, keybindings, () => {}, () => {}, 3);
+	const output = component.render(120).join("\n");
+	assert.match(output, /● npm:pi-demo/);
+	assert.doesNotMatch(output, /index\.ts/);
+	assert.doesNotMatch(output, /⌄/);
+});
+
+test("a multi-extension package keeps its group header and file rows", () => {
+	const state = extensionModel(["alpha.ts", "beta.ts"]);
+	state.type = "extensions";
+	const component = new PackageManagerComponent(state, theme, keybindings, () => {}, () => {}, 4);
+	const output = component.render(120).join("\n");
+	assert.match(output, /⌄ npm:pi-demo/);
+	assert.match(output, /● alpha\.ts/);
+	assert.match(output, /● beta\.ts/);
+});
+
+test("the details page shows the skill description", () => {
+	const base = model().catalog.global[0]!;
+	const resource: ManagedResource = { ...base, description: "Summarize a repository's state." };
+	const state = new PackageManagerModel(
+		{ global: [resource], project: [resource], globalSettings: {}, projectSettings: {} },
+		"/repo",
+		"/agent",
+		true,
+	);
+	const component = new PackageManagerComponent(state, theme, keybindings, () => {}, () => {}, 3);
+	assert.doesNotMatch(component.render(120).join("\n"), /Description:/);
+	component.handleInput("\r");
+	const details = component.render(120).join("\n");
+	assert.match(details, /Description: Summarize a repository's state\./);
 });

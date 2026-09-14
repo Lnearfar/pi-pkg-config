@@ -15,6 +15,8 @@ export interface ManagedResource {
 	enabled: boolean;
 	globalEnabled: boolean;
 	metadata: PathMetadata;
+	/** Skill description from Pi's skill loader, when Pi resolved one. */
+	description?: string;
 	/** True when this exact path is present in the global-only resolution. */
 	inheritedGlobal: boolean;
 	packageSource?: string;

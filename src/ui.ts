@@ -197,6 +197,7 @@ export class PackageManagerComponent implements Focusable {
 			return;
 		}
 
+		const collapsedGroups = this.collapsedGroups(resources);
 		const buildWindow = (start: number) => {
 			const visible: Array<{ resource: ManagedResource; index: number; showGroup: boolean }> = [];
 			let used = 0;
@@ -204,7 +205,7 @@ export class PackageManagerComponent implements Focusable {
 			for (let index = start; index < resources.length; index++) {
 				const resource = resources[index]!;
 				const showGroup = resource.groupKey !== lastGroup;
-				const needed = showGroup ? 2 : 1;
+				const needed = showGroup && !collapsedGroups.has(resource.groupKey) ? 2 : 1;
 				if (used + needed > this.listRowBudget) break;
 				visible.push({ resource, index, showGroup });
 				used += needed;
@@ -221,13 +222,21 @@ export class PackageManagerComponent implements Focusable {
 		}
 		for (const entry of window.visible) {
 			const { resource } = entry;
-			if (entry.showGroup) {
+			const collapsed = collapsedGroups.has(resource.groupKey);
+			if (entry.showGroup && !collapsed) {
 				const groupItems = resources.filter((item) => item.groupKey === resource.groupKey);
 				lines.push(row(this.renderGroupHeader(resource, groupItems, inner)));
 			}
-			lines.push(row(this.renderResource(resource, entry.index === view.selected, columns)));
+			lines.push(row(this.renderResource(resource, entry.index === view.selected, columns, collapsed)));
 		}
 		for (let index = window.used; index < this.listRowBudget; index++) lines.push(row(""));
+	}
+
+	private collapsedGroups(resources: ManagedResource[]): Set<string> {
+		if (this.model.type !== "extensions") return new Set();
+		const counts = new Map<string, number>();
+		for (const resource of resources) counts.set(resource.groupKey, (counts.get(resource.groupKey) ?? 0) + 1);
+		return new Set([...counts].filter(([, count]) => count === 1).map(([key]) => key));
 	}
 
 	private stateColumns(inner: number): StateColumns {
@@ -266,7 +275,7 @@ export class PackageManagerComponent implements Focusable {
 		return resources.filter((resource) => this.model.effectiveEnabled(resource)).length;
 	}
 
-	private renderResource(resource: ManagedResource, selected: boolean, columns: StateColumns): string {
+	private renderResource(resource: ManagedResource, selected: boolean, columns: StateColumns, collapsed = false): string {
 		const state = this.stateCells(resource, columns.compact);
 		const markers = this.diagnosticMarkers(resource);
 		const inUse = resource.selfProtected ? ` 🔒 ${this.tag("in use", "warning")}` : "";
@@ -274,7 +283,8 @@ export class PackageManagerComponent implements Focusable {
 		const lead = `${selected ? "› " : "  "}${this.status(resource)} `;
 		const trailing = `${markers}${inUse}${pending}`;
 		const nameEnd = columns.projectStart ?? columns.globalStart;
-		const name = this.middleTruncate(resource.name, Math.max(1, nameEnd - visibleWidth(lead) - visibleWidth(trailing)));
+		const label = collapsed ? resource.groupLabel : resource.name;
+		const name = this.middleTruncate(label, Math.max(1, nameEnd - visibleWidth(lead) - visibleWidth(trailing)));
 		const body = this.composeStateRow(`${lead}${this.theme.fg("text", name)}${trailing}`, state, columns);
 		if (selected) {
 			return `${this.theme.fg("borderAccent", "▌")}${this.theme.bg("selectedBg", body)}${this.theme.fg("borderAccent", "▐")}`;
@@ -358,6 +368,7 @@ export class PackageManagerComponent implements Focusable {
 		const cells = this.stateCells(resource, inner < 64);
 		const detailLines = [
 			` ${this.status(resource)} ${resource.name}${resource.selfProtected ? "  🔒 in use" : ""}`,
+			...(resource.description ? [` Description: ${resource.description}`] : []),
 			...(this.model.scope === "project" ? [` Project: ${cells.project?.text ?? "—"}`] : []),
 			` Global: ${cells.global.text}`,
 			` Type: ${resource.type}`,

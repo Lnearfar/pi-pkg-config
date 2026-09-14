@@ -58,24 +58,33 @@ function selfProtected(resource: ResolvedResource, extensionRoot: string): boole
 	return /(?:^|[/@:])pi-pkg-manager(?:@|$|[/])/i.test(resource.metadata.source);
 }
 
-function collectSkillDiagnostics(resources: ResolvedResource[], cwd: string, agentDir: string): ResourceDiagnostic[] {
+interface SkillValidation {
+	diagnostics: ResourceDiagnostic[];
+	descriptions: Map<string, string>;
+}
+
+function validateSkills(resources: ResolvedResource[], cwd: string, agentDir: string): SkillValidation {
+	const diagnostics: ResourceDiagnostic[] = [];
+	const descriptions = new Map<string, string>();
+	const collect = (loaded: ReturnType<typeof loadSkills>) => {
+		diagnostics.push(...loaded.diagnostics);
+		for (const skill of loaded.skills) descriptions.set(canonical(skill.filePath), skill.description);
+	};
 	try {
 		const enabledPaths = resources.filter((resource) => resource.enabled).map((resource) => resource.path);
-		const diagnostics = loadSkills({ cwd, agentDir, skillPaths: enabledPaths, includeDefaults: false }).diagnostics;
+		collect(loadSkills({ cwd, agentDir, skillPaths: enabledPaths, includeDefaults: false }));
 		// Disabled skills are validated in isolation so they can show parse errors
 		// without creating collisions that do not exist in Pi's active skill set.
 		for (const resource of resources) {
 			if (resource.enabled) continue;
-			diagnostics.push(
-				...loadSkills({ cwd, agentDir, skillPaths: [resource.path], includeDefaults: false }).diagnostics.filter(
-					(diagnostic) => diagnostic.type !== "collision",
-				),
-			);
+			const isolated = loadSkills({ cwd, agentDir, skillPaths: [resource.path], includeDefaults: false });
+			diagnostics.push(...isolated.diagnostics.filter((diagnostic) => diagnostic.type !== "collision"));
+			for (const skill of isolated.skills) descriptions.set(canonical(skill.filePath), skill.description);
 		}
-		return diagnostics;
 	} catch (error) {
-		return [{ type: "error", message: error instanceof Error ? error.message : String(error) }];
+		diagnostics.push({ type: "error", message: error instanceof Error ? error.message : String(error) });
 	}
+	return { diagnostics, descriptions };
 }
 
 function sourceString(source: PackageSource): string {
@@ -120,14 +129,14 @@ function mapResolved(
 	extensionRoot: string,
 	projectSettings: Settings,
 ): ManagedResource[] {
-	const skillDiagnostics = collectSkillDiagnostics(resolved.skills, cwd, agentDir);
+	const skillValidation = validateSkills(resolved.skills, cwd, agentDir);
 	const result: ManagedResource[] = [];
 	for (const type of ["skills", "extensions"] as const) {
 		for (const resource of resolved[type]) {
 			const path = canonical(resource.path);
 			const global = globalByKey.get(`${type}:${path}`);
 			const inheritedGlobal = global !== undefined && !isFullProjectPackage(resource.metadata, projectSettings, cwd, agentDir);
-			const diagnostics = diagnosticsFor(path, skillDiagnostics);
+			const diagnostics = diagnosticsFor(path, skillValidation.diagnostics);
 			if (!existsSync(path)) diagnostics.push({ type: "error", path, message: "Resource path does not exist" });
 			const groupKey = metadataKey(resource.metadata);
 			result.push({
@@ -138,6 +147,7 @@ function mapResolved(
 				enabled: resource.enabled,
 				globalEnabled: global?.enabled ?? resource.enabled,
 				metadata: resource.metadata,
+				description: type === "skills" ? skillValidation.descriptions.get(path) : undefined,
 				inheritedGlobal,
 				packageSource: resource.metadata.origin === "package" ? resource.metadata.source : undefined,
 				groupKey,

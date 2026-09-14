@@ -29,7 +29,7 @@
 - **Track inherited state** — `— (on)` and `— (off)` follow Global; `on` and `off` mark an explicit Project choice.
 - **Cycle Project state** — `Space` moves through inherit, on, and off on a single key.
 - **Review staged changes** — `Ctrl+S` reviews and saves the transaction; `Esc` discards it.
-- **Inspect Pi's resolution** — search locally and open details for paths, sources, overrides, and diagnostics.
+- **Inspect Pi's resolution** — search locally and open details for skill descriptions, paths, sources, overrides, and diagnostics.
 - **Remove installed packages** — review every affected resource before confirming removal from the active scope.
 - **Preserve settings integrity** — merge unrelated external edits and save through a lock plus atomic replacement.
 
@@ -102,6 +102,8 @@ The Project view keeps both columns aligned, so every row compares the Project r
 The Global view shows the single `Global` column and edits it directly.
 
 Below 64 columns of inner width the headers shorten to `P` and `G` to keep both columns aligned in narrow terminals.
+
+The Extensions view names each single-extension package after its source, so `npm:pi-blackhole` occupies one row.
 
 > [!IMPORTANT]
 > Project settings become editable after Pi trusts the project. An untrusted Project view shows `trust required` in the Project column.
