@@ -81,13 +81,13 @@ export class PackageManagerComponent implements Focusable {
 		}
 
 		if (this.keybindings.matches(data, "tui.input.tab") || matchesKey(data, Key.tab)) {
-			this.model.type = this.model.type === "skills" ? "extensions" : "skills";
+			this.model.scope = this.model.scope === "project" ? "global" : "project";
 			this.model.clampSelection();
 			this.requestRender();
 			return;
 		}
 		if (matchesKey(data, Key.left) || matchesKey(data, Key.right)) {
-			this.model.scope = this.model.scope === "project" ? "global" : "project";
+			this.model.type = this.model.type === "skills" ? "extensions" : "skills";
 			this.model.clampSelection();
 			this.requestRender();
 			return;
@@ -172,7 +172,7 @@ export class PackageManagerComponent implements Focusable {
 		const projectScope = label(project, this.model.scope === "project");
 		const globalScope = label(global, this.model.scope === "global");
 		const title = ` ${this.theme.bold("Package Manager")}  `;
-		const withKeys = `${title}${skills} ${this.keycap("Tab")} ${extensions}  ${projectScope} ${this.keycap("←→")} ${globalScope}`;
+		const withKeys = `${title}${skills} ${this.keycap("←→")} ${extensions}  ${projectScope} ${this.keycap("Tab")} ${globalScope}`;
 		if (visibleWidth(withKeys) <= inner) return withKeys;
 		return `${title}${skills} ${extensions}  ${projectScope} ${globalScope}`;
 	}

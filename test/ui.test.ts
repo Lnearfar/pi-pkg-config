@@ -236,3 +236,16 @@ test("the details page shows the skill description", () => {
 	const details = component.render(120).join("\n");
 	assert.match(details, /Description: Summarize a repository's state\./);
 });
+
+test("Tab switches scope while arrow keys switch resource type", () => {
+	const state = model();
+	const component = new PackageManagerComponent(state, theme, keybindings, () => {}, () => {}, 3);
+	component.handleInput("\t");
+	assert.equal(state.scope, "global");
+	component.handleInput("\u001b[C");
+	assert.equal(state.type, "extensions");
+	component.handleInput("\t");
+	assert.equal(state.scope, "project");
+	component.handleInput("\u001b[D");
+	assert.equal(state.type, "skills");
+});

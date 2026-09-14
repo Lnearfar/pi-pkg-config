@@ -69,8 +69,8 @@ Start a new Pi session and run one of the manager commands:
 
 | Key | Action |
 |---|---|
-| `Tab` | Switch Skills / Extensions |
-| `←` / `→` | Switch Project / Global |
+| `←` / `→` | Switch Skills / Extensions |
+| `Tab` | Switch Project / Global |
 | `↑` / `↓` | Navigate resources |
 | `Space` | Cycle inherit / on / off (Project) or toggle (Global) |
 | `r` | Restore inherit for a Global resource (Project view) |
