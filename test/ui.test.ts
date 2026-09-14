@@ -73,6 +73,8 @@ test("Project rows render aligned Project and Global state columns", () => {
 	assert.match(output, /— \(on\)/);
 	assert.match(output, /⌄ A very long global source label/);
 	assert.match(output, /▌.*a-very-long-resource-name.*▐/);
+	assert.match(output, /Space  Cycle/);
+	assert.doesNotMatch(output, /Inherit/);
 });
 
 test("Global rows show Global state and omit the inherit action", () => {
@@ -81,6 +83,7 @@ test("Global rows show Global state and omit the inherit action", () => {
 	const component = new PackageManagerComponent(state, theme, keybindings, () => {}, () => {}, 3);
 	const output = component.render(120).join("\n");
 	assert.match(output, /Global/);
+	assert.match(output, /Space  Toggle/);
 	assert.doesNotMatch(output, /Inherit/);
 });
 

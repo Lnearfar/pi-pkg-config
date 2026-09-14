@@ -27,6 +27,7 @@
 - **Control individual resources** — enable or disable each detected Skill and Extension.
 - **Read both scopes at once** — the Project view shows aligned `Project` and `Global` columns for every resource.
 - **Track inherited state** — `— (on)` and `— (off)` follow Global; `on` and `off` mark an explicit Project choice.
+- **Cycle Project state** — `Space` moves through inherit, on, and off on a single key.
 - **Review staged changes** — `Ctrl+S` reviews and saves the transaction; `Esc` discards it.
 - **Inspect Pi's resolution** — search locally and open details for paths, sources, overrides, and diagnostics.
 - **Remove installed packages** — review every affected resource before confirming removal from the active scope.
@@ -71,7 +72,7 @@ Start a new Pi session and run one of the manager commands:
 | `Tab` | Switch Skills / Extensions |
 | `←` / `→` | Switch Project / Global |
 | `↑` / `↓` | Navigate resources |
-| `Space` | Stage a state change |
+| `Space` | Cycle inherit / on / off (Project) or toggle (Global) |
 | `r` | Restore inherit for a Global resource (Project view) |
 | `/` | Search resolved resources locally |
 | `Enter` | Open resource details |
@@ -96,7 +97,7 @@ Each row leads with its state:
 | **Project** | Project resources followed by inherited Global resources | `Project` and `Global` | Current project settings and overrides |
 | **Global** | Resources resolved from the global Pi environment | `Global` | Global Pi settings |
 
-The Project view keeps both columns aligned, so every row compares the Project result against its Global baseline. An inherited resource shows `— (on)` or `— (off)` and follows Global; an explicit Project choice shows `on` or `off`. Press `r` to restore inherit. Project-only resources show `—` in the Global column.
+The Project view keeps both columns aligned, so every row compares the Project result against its Global baseline. An inherited resource shows `— (on)` or `— (off)` and follows Global; an explicit Project choice shows `on` or `off`. `Space` cycles inherit → on → off and returns to inherit. Project-only resources show `—` in the Global column.
 
 The Global view shows the single `Global` column and edits it directly.
 

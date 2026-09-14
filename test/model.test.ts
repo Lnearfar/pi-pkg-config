@@ -72,18 +72,22 @@ test("project effective state respects non-exact project filters", () => {
 	assert.equal(state.effectiveEnabled(filtered), true);
 });
 
-test("project Space changes effective state and r restores inherit", () => {
+test("project Space cycles inherit, load, and unload", () => {
 	const state = model([item("/home/u/.agents/skills/a/SKILL.md")]);
 	const selected = state.selectedResource()!;
+	assert.equal(state.currentOverride(selected), "inherit");
+	state.toggle();
+	assert.equal(state.currentOverride(selected), "load");
+	assert.equal(state.effectiveEnabled(selected), true);
 	state.toggle();
 	assert.equal(state.currentOverride(selected), "unload");
 	assert.equal(state.effectiveEnabled(selected), false);
-	state.reset();
+	state.toggle();
 	assert.equal(state.currentOverride(selected), "inherit");
 	assert.equal(state.pending.size, 0);
 });
 
-test("project-owned resources toggle independently and do not expose inherit reset", () => {
+test("project-owned resources cycle between on and off", () => {
 	const local = item("/repo/.agents/skills/local/SKILL.md", {
 		metadata: { source: "auto", scope: "project", origin: "top-level", baseDir: "/repo/.agents" },
 		inheritedGlobal: false,
@@ -93,7 +97,6 @@ test("project-owned resources toggle independently and do not expose inherit res
 	assert.equal(state.toggle(), true);
 	assert.equal(state.effectiveEnabled(local), false);
 	assert.equal(state.pending.size, 1);
-	assert.equal(state.reset(), false);
 	state.toggle();
 	assert.equal(state.effectiveEnabled(local), true);
 	assert.equal(state.pending.size, 0);

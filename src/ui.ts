@@ -121,8 +121,6 @@ export class PackageManagerComponent implements Focusable {
 			this.model.move(8);
 		} else if (matchesKey(data, Key.space)) {
 			this.model.toggle();
-		} else if (data === "r") {
-			this.model.reset();
 		} else if (this.keybindings.matches(data, "tui.select.confirm") || matchesKey(data, Key.enter)) {
 			if (this.model.selectedResource()) this.details = true;
 		} else if (matchesKey(data, Key.delete)) {
@@ -406,8 +404,10 @@ export class PackageManagerComponent implements Focusable {
 				...this.actionLines([this.action("Delete", "Backspace"), this.action("Clear", "Esc")], inner),
 			];
 		}
-		const actions = [this.action("Move", "↑↓"), this.action("Toggle", "Space")];
-		if (this.model.scope === "project") actions.push(this.action("Inherit", "r"));
+		const actions = [
+			this.action("Move", "↑↓"),
+			this.action(this.model.scope === "project" ? "Cycle" : "Toggle", "Space"),
+		];
 		actions.push(this.action("Search", "/"), this.action("Details", "Enter"), this.action("Remove", "Del"), this.action("Close", "Esc"));
 		return [this.statusLine(inner), ...this.actionLines(actions, inner)];
 	}

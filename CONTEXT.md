@@ -53,7 +53,7 @@ Scope 指的是**设置条目**所在的作用域。一个全局安装的包，�
 
 ## Inherited（继承）
 
-Project 作用域下，资源处于 **inherit**，其生效状态完全由 Global 决定。UI 中以 dim 显示。
+Project 作用域下，资源处于 **inherit**，其生效状态完全由 Global 决定。UI 在 Project 状态列以 `— (on)` / `— (off)` 显示继承后的生效状态。
 
 ## Effective state（生效状态）
 

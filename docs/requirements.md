@@ -79,7 +79,7 @@ pi 本身能识别 `~/.agents/skills`、项目 `.agents/skills`（向上到 git 
   - 全局资源默认 inherit，Project 中切换时创建项目级覆盖；
   - Project 覆盖 Global，双向（global 开→项目关；global 关→项目开）。
 - 项目覆盖为三态：inherit / load / unload（见 3.3）。
-- Project 视图中 `Space` 切换项目实际状态；对全局继承资源，`r` 删除项目覆盖并恢复 `inherit`，不使用循环三态操作。
+- Project 视图中 `Space` 在 `inherit` → `on` → `off` → `inherit` 之间循环；项目自有资源在 `on` / `off` 之间循环。
 - 项目自有资源没有 Global 可继承，只做独立 on/off；同一次编辑中切回原始状态会自动取消该未保存修改。
 - 包移除不记录历史；"disabled" 与"removed"不进入同一个状态模型。
 
@@ -95,14 +95,14 @@ pi 本身能识别 `~/.agents/skills`、项目 `.agents/skills`（向上到 git 
 - 列表行显示名称、状态、对齐的 Project / Global 状态列与简短来源；当前项使用紧凑单行 `selectedBg`、accent 左右边缘和 `›` 指针；`Enter` 打开资源详情卡，展示完整路径、package、覆盖关系和诊断；详情页 `Enter` 与 `Esc` 返回列表。
 - 标题栏使用 `Package Manager   [Skills] Tab Extensions   [Project] ←→ Global` 的文本结构；当前选择使用 accent，`Tab` 与 `←→` 使用 dim 小按键标签；`Tab` 切换 Skills/Extensions，`←/→` 切换 Project/Global。
 - `Project` 视图显示对齐的 `Project` 与 `Global` 状态列；标题栏高亮 Project，`Space` 修改 Project 状态。`Global` 视图只显示 Global 相关信息，标题栏高亮 Global，`Space` 修改 Global 状态；Global 状态列保持与 Project 视图相同的最右侧列位。内部宽度低于 64 列时，标题栏与状态列表使用 `P` / `G` 缩写。
-- 底部使用两层信息栏：状态行左侧显示当前位置 `6/24`，右侧显示编辑状态；工具栏使用按键标签展示资源操作，`Tab` 与 `←→` 仅在标题栏展示；Project 工具栏包含 `[r] Inherit`，Global 工具栏省略该操作；窄终端将工具栏自动换成两行并保留全部操作。
+- 底部使用两层信息栏：状态行左侧显示当前位置 `6/24`，右侧显示编辑状态；工具栏使用按键标签展示资源操作，`Tab` 与 `←→` 仅在标题栏展示；Project 工具栏显示 `[Space] Cycle`，Global 工具栏显示 `[Space] Toggle`；窄终端将工具栏自动换成两行并保留全部操作。
 - 切换视图时保留每个视图的搜索词、滚动位置与 pending 修改。
 - `Global` 视图编辑并展示全局资源与 Global 状态。
 - `Project` 视图编辑当前项目设置，同时显示 Project 与 Global 状态列；项目资源排在前，全局资源默认 inherited，直接编辑时写入项目覆盖。
 - 列表按来源分组（每个包一组、每个本地目录一组），来源是辅助信息；不再额外增加 Package 顶层视图。
 - 每个本地目录与包来源使用同一种固定展开来源分组；标题以静态 `⌄` 开头，显示缩短来源路径，后面紧跟一个空格与 `N/M enabled` 统计，具体 resource 行相对标题缩进一层并承载全部操作；Project 视图统计 Project 生效状态，Global 视图统计 Global 状态，Extensions 视图省略统计；项目内资源使用相对当前目录的 `./` 路径，全局资源使用 `~` 路径，长路径使用中间省略号，详情页显示完整路径与完整 package source。
 - `/` 进入本地搜索模式，只过滤当前 Tab 中 pi 已检测到的资源，绝不联网；标题栏下方显示 `⌕ Search: <query>` 紧凑输入栏，查询文本使用 accent；列表只展示含匹配资源的来源容器；搜索模式下所有字符仅作为查询文本，`Esc` 清空并退出搜索。
-- 普通列表模式下 `r` 只对全局继承资源恢复 inherit；搜索模式中的 `r` 只是查询字符。
+- 列表模式下的 `Space` 只作用于列表，搜索模式中的 `Space` 是查询字符。
 - 一个同时提供 extension 和 skill 的包会分别出现在两个 Tab。
 - Project 视图只能移除项目包；全局包在 Project 视图中只能设置/清除项目覆盖，必须切换到 Global 才能卸载。
 - 卸载属于即时包操作，不进入 toggle 的 pending state；执行前必须确认。

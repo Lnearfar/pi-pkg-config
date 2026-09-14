@@ -43,7 +43,8 @@ test("disabling the last positive package include does not enable a sibling", as
 	}
 });
 
-test("global disable and project enable/reset round-trip through Pi resolution", async () => {	const root = mkdtempSync(join(tmpdir(), "pi-pkg-integration-"));
+test("global disable and project enable/reset round-trip through Pi resolution", async () => {
+	const root = mkdtempSync(join(tmpdir(), "pi-pkg-integration-"));
 	try {
 		const agentDir = join(root, "agent");
 		const cwd = join(root, "repo");
@@ -79,7 +80,8 @@ test("global disable and project enable/reset round-trip through Pi resolution",
 		assert.equal(catalog.project.find((resource) => resource.path === skillPath)?.enabled, true);
 		model = new PackageManagerModel(catalog, cwd, agentDir, true);
 		const overridden = model.resources().find((resource) => resource.path === skillPath)!;
-		assert.equal(model.reset(overridden), true);
+		model.toggle(overridden); // load -> unload
+		model.toggle(overridden); // unload -> inherit
 		preview = backend.prepareSave(model.pendingChanges());
 		result = await backend.commitSave(model.pendingChanges(), preview);
 		assert.deepEqual(result.savedScopes, ["project"]);

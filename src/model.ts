@@ -154,12 +154,29 @@ export class PackageManagerModel {
 		}
 
 		const beforeOverride = this.originalOverride(resource);
+		if (resource.inheritedGlobal) {
+			// Inherited resources cycle through inherit -> load -> unload -> inherit.
+			const current = this.currentOverride(resource);
+			const afterOverride: OverrideState = current === "inherit" ? "load" : current === "load" ? "unload" : "inherit";
+			if (afterOverride === beforeOverride) this.pending.delete(key);
+			else {
+				this.pending.set(key, {
+					key,
+					resource,
+					scope: "project",
+					beforeEnabled: resource.enabled,
+					beforeOverride,
+					afterEnabled: afterOverride === "inherit" ? this.globalEnabled(resource) : afterOverride === "load",
+					afterOverride,
+				});
+			}
+			return true;
+		}
+
+		// A project-owned resource has no global state to inherit, so it cycles
+		// between its two resolved states.
 		const afterEnabled = !this.effectiveEnabled(resource);
-		const afterOverride: OverrideState = afterEnabled ? "load" : "unload";
-		// A project-owned resource has no global state to inherit. Toggling it
-		// back to its resolved state should remove the pending edit.
-		if (!resource.inheritedGlobal && afterEnabled === resource.enabled) this.pending.delete(key);
-		else if (resource.inheritedGlobal && afterOverride === beforeOverride) this.pending.delete(key);
+		if (afterEnabled === resource.enabled) this.pending.delete(key);
 		else {
 			this.pending.set(key, {
 				key,
@@ -168,33 +185,7 @@ export class PackageManagerModel {
 				beforeEnabled: resource.enabled,
 				beforeOverride,
 				afterEnabled,
-				afterOverride,
-			});
-		}
-		return true;
-	}
-
-	reset(resource = this.selectedResource()): boolean {
-		if (
-			!resource ||
-			this.scope !== "project" ||
-			!resource.inheritedGlobal ||
-			resource.selfProtected ||
-			!this.projectTrusted
-		)
-			return false;
-		const key = pendingKey(resource, "project");
-		const beforeOverride = this.originalOverride(resource);
-		if (beforeOverride === "inherit") this.pending.delete(key);
-		else {
-			this.pending.set(key, {
-				key,
-				resource,
-				scope: "project",
-				beforeEnabled: resource.enabled,
-				beforeOverride,
-				afterEnabled: resource.inheritedGlobal ? this.globalEnabled(resource) : resource.enabled,
-				afterOverride: "inherit",
+				afterOverride: afterEnabled ? "load" : "unload",
 			});
 		}
 		return true;
