@@ -79,9 +79,11 @@ async function savePending(
 	return "continue";
 }
 
-async function runManager(ctx: ExtensionCommandContext, initialType: ResourceType = "skills"): Promise<void> {
+const OVERLAY_CHROME_ROWS = 11; // Borders, header, column header, separator, status line, and wrapped actions.
+
+async function runManager(ctx: ExtensionCommandContext, command: string, initialType: ResourceType = "skills"): Promise<void> {
 	if (ctx.mode !== "tui") {
-		ctx.ui.notify("/pkg-manager requires TUI mode.", "error");
+		ctx.ui.notify(`${command} requires TUI mode.`, "error");
 		return;
 	}
 	const backend = new PackageManagerBackend(ctx.cwd, ctx.isProjectTrusted(), EXTENSION_ROOT);
@@ -104,7 +106,7 @@ async function runManager(ctx: ExtensionCommandContext, initialType: ResourceTyp
 					keybindings,
 					done,
 					() => tui.requestRender(),
-					Math.max(1, Math.min(10, Math.floor(tui.terminal.rows * 0.8) - 10)),
+					Math.max(1, Math.min(10, Math.floor(tui.terminal.rows * 0.8) - OVERLAY_CHROME_ROWS)),
 				),
 			{
 				overlay: true,
@@ -156,14 +158,14 @@ async function runManager(ctx: ExtensionCommandContext, initialType: ResourceTyp
 export default function pkgManagerExtension(pi: ExtensionAPI): void {
 	pi.registerCommand("pkg-manager", {
 		description: "Manage Pi skills and extensions",
-		handler: async (_args, ctx) => runManager(ctx),
+		handler: async (_args, ctx) => runManager(ctx, "/pkg-manager"),
 	});
 	pi.registerCommand("skills-manager", {
 		description: "Manage Pi skills",
-		handler: async (_args, ctx) => runManager(ctx, "skills"),
+		handler: async (_args, ctx) => runManager(ctx, "/skills-manager", "skills"),
 	});
 	pi.registerCommand("extensions-manager", {
 		description: "Manage Pi extensions",
-		handler: async (_args, ctx) => runManager(ctx, "extensions"),
+		handler: async (_args, ctx) => runManager(ctx, "/extensions-manager", "extensions"),
 	});
 }

@@ -100,7 +100,7 @@ The Project view keeps both columns aligned, so every row compares the Project r
 
 The Global view shows the single `Global` column and edits it directly.
 
-Below 64 columns the headers shorten to `P` and `G` to keep both columns aligned in narrow terminals.
+Below 64 columns of inner width the headers shorten to `P` and `G` to keep both columns aligned in narrow terminals.
 
 > [!IMPORTANT]
 > Project settings become editable after Pi trusts the project. An untrusted Project view shows `trust required` in the Project column.

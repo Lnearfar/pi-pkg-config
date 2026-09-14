@@ -165,13 +165,18 @@ export class PackageManagerComponent implements Focusable {
 
 	private renderHeader(inner: number): string {
 		const compact = inner < 64;
-		const tab = (label: string, active: boolean) =>
-			active ? this.theme.fg("accent", this.theme.bold(`[${label}]`)) : this.theme.fg("dim", label);
-		const scope = (label: string, active: boolean) =>
-			active ? this.theme.fg("accent", this.theme.bold(`[${label}]`)) : this.theme.fg("dim", label);
+		const label = (text: string, active: boolean) =>
+			active ? this.theme.fg("accent", this.theme.bold(`[${text}]`)) : this.theme.fg("dim", text);
 		const project = compact ? "P" : "Project";
 		const global = compact ? "G" : "Global";
-		return ` ${this.theme.bold("Package Manager")}  ${tab("Skills", this.model.type === "skills")} ${this.keycap("Tab")} ${tab("Extensions", this.model.type === "extensions")}  ${scope(project, this.model.scope === "project")} ${this.keycap("←→")} ${scope(global, this.model.scope === "global")}`;
+		const skills = label("Skills", this.model.type === "skills");
+		const extensions = label("Extensions", this.model.type === "extensions");
+		const projectScope = label(project, this.model.scope === "project");
+		const globalScope = label(global, this.model.scope === "global");
+		const title = ` ${this.theme.bold("Package Manager")}  `;
+		const withKeys = `${title}${skills} ${this.keycap("Tab")} ${extensions}  ${projectScope} ${this.keycap("←→")} ${globalScope}`;
+		if (visibleWidth(withKeys) <= inner) return withKeys;
+		return `${title}${skills} ${extensions}  ${projectScope} ${globalScope}`;
 	}
 
 	private renderList(row: (content?: string) => string, lines: string[], inner: number): void {
@@ -260,18 +265,19 @@ export class PackageManagerComponent implements Focusable {
 	}
 
 	private groupCount(resources: ManagedResource[]): number {
-		if (this.model.scope === "project" && !this.model.projectTrusted) return 0;
 		return resources.filter((resource) => this.model.effectiveEnabled(resource)).length;
 	}
 
 	private renderResource(resource: ManagedResource, selected: boolean, columns: StateColumns): string {
 		const state = this.stateCells(resource, columns.compact);
-		const nameColor: ThemeColor = selected ? "text" : "text";
 		const markers = this.diagnosticMarkers(resource);
 		const inUse = resource.selfProtected ? ` 🔒 ${this.tag("in use", "warning")}` : "";
 		const pending = this.model.isPending(resource) ? ` ${this.theme.fg("warning", "*")}` : "";
-		const prefix = `${selected ? "› " : "  "}${this.status(resource)} ${this.theme.fg(nameColor, resource.name)}${markers}${inUse}${pending}`;
-		const body = this.composeStateRow(prefix, state, columns);
+		const lead = `${selected ? "› " : "  "}${this.status(resource)} `;
+		const trailing = `${markers}${inUse}${pending}`;
+		const nameEnd = columns.projectStart ?? columns.globalStart;
+		const name = this.middleTruncate(resource.name, Math.max(1, nameEnd - visibleWidth(lead) - visibleWidth(trailing)));
+		const body = this.composeStateRow(`${lead}${this.theme.fg("text", name)}${trailing}`, state, columns);
 		if (selected) {
 			return `${this.theme.fg("borderAccent", "▌")}${this.theme.bg("selectedBg", body)}${this.theme.fg("borderAccent", "▐")}`;
 		}
@@ -447,7 +453,10 @@ export class PackageManagerComponent implements Focusable {
 	}
 
 	private pad(text: string, width: number): string {
-		const clipped = truncateToWidth(text, Math.max(0, width), "");
+		// truncateToWidth closes truncated styles with a full reset, which would also
+		// cancel the selected-row background for the trailing padding. Drop it and let
+		// the active style continue across the padded cells.
+		const clipped = truncateToWidth(text, Math.max(0, width), "").replace(/\x1b\[0m$/, "");
 		return `${clipped}${" ".repeat(Math.max(0, width - visibleWidth(clipped)))}`;
 	}
 

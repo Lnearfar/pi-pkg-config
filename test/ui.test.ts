@@ -40,9 +40,16 @@ function model(): PackageManagerModel {
 }
 
 test("overlay rendering never exceeds the width requested by Pi", () => {
-	const component = new PackageManagerComponent(model(), theme, keybindings, () => {}, () => {}, 3);
-	for (const width of [1, 4, 10, 40]) {
-		for (const line of component.render(width)) assert.ok(visibleWidth(line) <= width, `${visibleWidth(line)} > ${width}`);
+	const project = new PackageManagerComponent(model(), theme, keybindings, () => {}, () => {}, 3);
+	const globalState = model();
+	globalState.scope = "global";
+	const globalView = new PackageManagerComponent(globalState, theme, keybindings, () => {}, () => {}, 3);
+	for (const width of [1, 4, 10, 40, 50, 63, 65, 66, 80]) {
+		for (const component of [project, globalView]) {
+			for (const line of component.render(width)) {
+				assert.ok(visibleWidth(line) <= width, `${visibleWidth(line)} > ${width}`);
+			}
+		}
 	}
 });
 
@@ -77,8 +84,7 @@ test("Global rows show Global state and omit the inherit action", () => {
 	assert.doesNotMatch(output, /Inherit/);
 });
 
-test("Project status marker distinguishes inherited Global off from explicit Project states", () => {
-	const global: ManagedResource = {
+test("Project status marker distinguishes inherited Global off from explicit Project states", () => {	const global: ManagedResource = {
 		...model().catalog.global[0]!,
 		enabled: false,
 		globalEnabled: false,
@@ -103,4 +109,53 @@ test("Project status marker distinguishes inherited Global off from explicit Pro
 	assert.match(component.render(500).join("\n"), /<success>●<\/success>/);
 	state.toggle(project);
 	assert.match(component.render(500).join("\n"), /<error>●<\/error>/);
+});
+
+test("compact mode switches the column headers at the inner width boundary", () => {
+	const component = new PackageManagerComponent(model(), theme, keybindings, () => {}, () => {}, 3);
+	assert.doesNotMatch(component.render(65).join("\n"), /Project|Global/);
+	assert.match(component.render(66).join("\n"), /Project/);
+	assert.match(component.render(66).join("\n"), /Global/);
+	assert.match(component.render(50)[1] ?? "", /\[P\].*G/);
+});
+
+test("untrusted Project view marks trust and counts inherited state", () => {
+	const resource = model().catalog.global[0]!;
+	const state = new PackageManagerModel(
+		{ global: [resource], project: [resource], globalSettings: {}, projectSettings: {} },
+		"/repo",
+		"/agent",
+		false,
+	);
+	const component = new PackageManagerComponent(state, theme, keybindings, () => {}, () => {}, 3);
+	const output = component.render(120).join("\n");
+	assert.match(output, /trust required/);
+	assert.match(output, /1\/1 enabled/);
+});
+
+test("selected rows keep their background when a long name is truncated", () => {
+	const resource: ManagedResource = {
+		...model().catalog.global[0]!,
+		name: "an-extremely-long-resource-name-that-overflows-the-name-column",
+	};
+	const state = new PackageManagerModel(
+		{ global: [resource], project: [resource], globalSettings: {}, projectSettings: {} },
+		"/repo",
+		"/agent",
+		true,
+	);
+	const ansiTheme = {
+		fg: (_color: string, text: string) => `\x1b[38;5;1m${text}\x1b[39m`,
+		bg: (_color: string, text: string) => `\x1b[48;5;2m${text}\x1b[49m`,
+		bold: (text: string) => text,
+		inverse: (text: string) => text,
+	} as unknown as Theme;
+	const component = new PackageManagerComponent(state, ansiTheme, keybindings, () => {}, () => {}, 3);
+	for (const width of [50, 65, 66, 80]) {
+		const lines = component.render(width);
+		const selected = lines.filter((line) => line.includes("▌"));
+		assert.equal(selected.length, 1, `selected row at width ${width}`);
+		assert.ok(!selected[0]!.includes("\x1b[0m"), `full style reset in the selected row at width ${width}`);
+		for (const line of lines) assert.ok(visibleWidth(line) <= width, `${visibleWidth(line)} > ${width}`);
+	}
 });
