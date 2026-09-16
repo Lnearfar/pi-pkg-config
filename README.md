@@ -7,7 +7,7 @@
 ![Pi 0.85.1](https://img.shields.io/badge/pi-0.85.1-2ea043)
 ![Node 22.19+](https://img.shields.io/badge/node-%E2%89%A522.19-2ea043)
 
-[Features](#features) · [Install](#install) · [Use](#use) · [Scopes](#scopes) · [Publishing](#publishing) · [Development](#development)
+[Features](#features) · [Install](#install) · [Use](#use) · [Scopes](#scopes) · [Development](#development)
 
 </div>
 
@@ -89,12 +89,6 @@ Pi resolves every displayed resource. The extension uses Pi's package and settin
 - Package removal persists settings before managed-file cleanup.
 - Local package removal keeps local source files in place.
 
-## Publishing
-
-Version tags matching `package.json` run the npm release workflow. It checks the package, tarball, and runtime dependency audit, then publishes through GitHub Actions OIDC in the protected `npm-publish` environment.
-
-Configure npm Trusted Publishing with owner `Lnearfar`, repository `pi-pkg-config`, workflow `publish.yml`, and environment `npm-publish`. Public releases receive npm provenance automatically. [Pi package documentation](https://pi.dev/docs/latest/packages) and [npm Trusted Publishing](https://docs.npmjs.com/trusted-publishers/) define the release contract.
-
 ## Development
 
 ```bash
@@ -105,6 +99,14 @@ pi -e .
 ```
 
 `npm run check` runs TypeScript type-checking and the Node test suite. `npm run pack:check` shows the exact npm tarball contents.
+
+Releases are Git tags. Tag a commit and push it:
+
+```bash
+git tag v0.2.0 && git push origin v0.2.0
+```
+
+Pin a tag with `pi install git:github.com/Lnearfar/pi-pkg-config@v0.2.0` and keep the tag matching the `package.json` version.
 
 ## Documentation
 

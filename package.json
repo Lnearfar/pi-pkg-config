@@ -28,9 +28,6 @@
     "CHANGELOG.md",
     "LICENSE"
   ],
-  "publishConfig": {
-    "access": "public"
-  },
   "pi": {
     "extensions": [
       "./src/index.ts"
@@ -43,9 +40,7 @@
     "check": "npm run typecheck && npm test",
     "smoke:package": "node scripts/smoke-package.mjs",
     "pack:check": "npm pack --dry-run",
-    "audit:runtime": "npm audit --omit=dev --omit=peer --audit-level=high",
-    "release:verify": "node scripts/verify-release.mjs",
-    "prepublishOnly": "npm run check && npm run pack:check"
+    "audit:runtime": "npm audit --omit=dev --omit=peer --audit-level=high"
   },
   "peerDependencies": {
     "@earendil-works/pi-coding-agent": "*",

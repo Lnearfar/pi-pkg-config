@@ -3,8 +3,9 @@
 ## [0.2.0] - 2026-09-16
 
 - Rename the package, command, and repository to `pi-pkg-config` with `/config` as the only entry point.
-- Add a tag-driven npm release workflow using Trusted Publishing with provenance.
-- Add CI, package smoke-load, tarball, runtime dependency audit, and release tag checks.
+- Distribute through GitHub; npm publishing stays out of scope.
+- Soften the overlay frame color and regenerate the screenshot.
+- Add CI with type checking, tests, and an isolated package smoke load.
 - Publish under the MIT license.
 
 ## [0.1.0] - 2026-09-13
