@@ -93,7 +93,7 @@ pi 本身能识别 `~/.agents/skills`、项目 `.agents/skills`（向上到 git 
 - 管理器保持居中的小型 overlay：默认宽度 80、最小宽度 50、最大高度为终端的 80%、外边距 1；外层面板与选中资源行使用当前主题的 `borderAccent`，静态来源标题使用 `borderMuted`，容器内部保持终端默认背景。
 - 所有 UI 文案、状态和提示使用纯英文。
 - 列表行显示名称、状态、对齐的 Project / Global 状态列与简短来源；当前项使用紧凑单行 `selectedBg`、accent 左右边缘和 `›` 指针；`Enter` 打开资源详情卡，展示名称、skill description、完整路径、package、覆盖关系和诊断；详情页 `Enter` 与 `Esc` 返回列表。
-- 标题栏使用 `Package Manager   [Skills] ←→ Extensions   [Project] Tab Global` 的文本结构；当前选择使用 accent，`Tab` 与 `←→` 使用 dim 小按键标签；`←/→` 切换 Skills/Extensions，`Tab` 切换 Project/Global。
+- 标题栏使用 `Package Manager   [Project] Tab Global   [Skills] ←→ Extensions` 的文本结构；当前选择使用 accent，`Tab` 与 `←→` 使用 dim 小按键标签；`Tab` 切换 Project/Global，`←/→` 切换 Skills/Extensions。
 - `Project` 视图显示对齐的 `Project` 与 `Global` 状态列；标题栏高亮 Project，`Space` 修改 Project 状态。`Global` 视图只显示 Global 相关信息，标题栏高亮 Global，`Space` 修改 Global 状态；Global 状态列保持与 Project 视图相同的最右侧列位。内部宽度低于 64 列时，标题栏与状态列表使用 `P` / `G` 缩写。
 - 底部使用两层信息栏：状态行左侧显示当前位置 `6/24`，右侧显示编辑状态；工具栏使用按键标签展示资源操作，`Tab` 与 `←→` 仅在标题栏展示；工具栏显示 `[Space] on/off`；窄终端将工具栏自动换成两行并保留全部操作。
 - 切换视图时保留每个视图的搜索词、滚动位置与 pending 修改。
