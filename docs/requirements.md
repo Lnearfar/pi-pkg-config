@@ -90,7 +90,7 @@ pi 本身能识别 `~/.agents/skills`、项目 `.agents/skills`（向上到 git 
 - 顶层只有 `Extensions` / `Skills` 两个 Tab；每个 Tab 只展示对应资源。
 - 顶层资源选择器顺序为 `Skills`、`Extensions`；作用域选择器独立存在，顺序为 `Project`、`Global`。
 - 两个选择器互相独立，不组合成四个 Tab；默认打开 `Skills + Project`。
-- 管理器保持居中的小型 overlay：默认宽度 80、最小宽度 50、最大高度为终端的 80%、外边距 1；外层面板与选中资源行使用当前主题的 `borderAccent`，静态来源标题使用 `borderMuted`，容器内部保持终端默认背景。
+- 管理器保持居中的小型 overlay：默认宽度 80、最小宽度 50、最大高度为终端的 80%、外边距 1；外层面板边框使用当前主题的 `accent`（比 `borderAccent` 柔和，避免深色主题下亮青色刺眼），选中资源行的左右边缘保留 `borderAccent` 作为焦点提示，静态来源标题使用 `borderMuted`，容器内部保持终端默认背景。
 - 所有 UI 文案、状态和提示使用纯英文。
 - 列表行显示名称、状态、对齐的 Project / Global 状态列与简短来源；当前项使用紧凑单行 `selectedBg`、accent 左右边缘和 `›` 指针；`Enter` 打开资源详情卡，展示名称、skill description、完整路径、package、覆盖关系和诊断；详情页 `Enter` 与 `Esc` 返回列表。
 - 标题栏使用 `Package Config   [Project] Tab Global   [Skills] ←→ Extensions` 的文本结构；当前选择使用 accent，`Tab` 与 `←→` 使用 dim 小按键标签；`Tab` 切换 Project/Global，`←/→` 切换 Skills/Extensions。

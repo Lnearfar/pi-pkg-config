@@ -144,7 +144,7 @@ export class PackageManagerComponent implements Focusable {
 		if (width < 4) return [" ".repeat(Math.max(0, width))];
 		const inner = width - 2;
 		const lines: string[] = [];
-		const border = (text: string) => this.theme.fg("borderAccent", text);
+		const border = (text: string) => this.theme.fg("accent", text);
 		const row = (content = "") => {
 			const clipped = truncateToWidth(content, inner, "");
 			return `${border("│")}${clipped}${" ".repeat(Math.max(0, inner - visibleWidth(clipped)))}${border("│")}`;
