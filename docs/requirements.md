@@ -1,4 +1,4 @@
-# pi-pkg-manager 需求文档
+# pi-pkg-config 需求文档
 
 状态：**v1 已实现**。每条都标了 [已决] / [事实]。
 本文档记录**结论**；术语见 [../CONTEXT.md](../CONTEXT.md)。
@@ -93,7 +93,7 @@ pi 本身能识别 `~/.agents/skills`、项目 `.agents/skills`（向上到 git 
 - 管理器保持居中的小型 overlay：默认宽度 80、最小宽度 50、最大高度为终端的 80%、外边距 1；外层面板与选中资源行使用当前主题的 `borderAccent`，静态来源标题使用 `borderMuted`，容器内部保持终端默认背景。
 - 所有 UI 文案、状态和提示使用纯英文。
 - 列表行显示名称、状态、对齐的 Project / Global 状态列与简短来源；当前项使用紧凑单行 `selectedBg`、accent 左右边缘和 `›` 指针；`Enter` 打开资源详情卡，展示名称、skill description、完整路径、package、覆盖关系和诊断；详情页 `Enter` 与 `Esc` 返回列表。
-- 标题栏使用 `Package Manager   [Project] Tab Global   [Skills] ←→ Extensions` 的文本结构；当前选择使用 accent，`Tab` 与 `←→` 使用 dim 小按键标签；`Tab` 切换 Project/Global，`←/→` 切换 Skills/Extensions。
+- 标题栏使用 `Package Config   [Project] Tab Global   [Skills] ←→ Extensions` 的文本结构；当前选择使用 accent，`Tab` 与 `←→` 使用 dim 小按键标签；`Tab` 切换 Project/Global，`←/→` 切换 Skills/Extensions。
 - `Project` 视图显示对齐的 `Project` 与 `Global` 状态列；标题栏高亮 Project，`Space` 修改 Project 状态。`Global` 视图只显示 Global 相关信息，标题栏高亮 Global，`Space` 修改 Global 状态；Global 状态列保持与 Project 视图相同的最右侧列位。内部宽度低于 64 列时，标题栏与状态列表使用 `P` / `G` 缩写。
 - 底部使用两层信息栏：状态行左侧显示当前位置 `6/24`，右侧显示编辑状态；工具栏使用按键标签展示资源操作，`Tab` 与 `←→` 仅在标题栏展示；工具栏显示 `[Space] on/off`；窄终端将工具栏自动换成两行并保留全部操作。
 - 切换视图时保留每个视图的搜索词、滚动位置与 pending 修改。
@@ -110,7 +110,7 @@ pi 本身能识别 `~/.agents/skills`、项目 `.agents/skills`（向上到 git 
 - 左侧状态符只表示当前 Project 生效状态，使用实心 `●` 或空心 `○`；Project / Global 列只显示文字。列表顶部显示对齐列名 `Project` 与 `Global`。Project 列以 `— (on)` / `— (off)` 表示 inherit 后的生效状态，以 `on` / `off` 表示显式 Project 覆盖；Global 列显示全局状态，`—` 表示资源仅属于 Project。
 - Project 视图中，Global 为 `on` 时，Project 生效 `on` 显示 success `●`，Project 生效 `off` 显示 error `●`。Global 为 `off` 时，Project inherit 显示 muted `○`，显式 Project `on` 显示 success `●`，显式 Project `off` 显示 error `●`。Project-only 资源的 `on` / `off` 分别显示 success / error `●`。
 - Global 视图中，Global `on` 显示 success `●`，Global `off` 显示 muted `○`。
-- 入口命令为 `/pkg-manager`、`/skills-manager`、`/extensions-manager`：`/pkg-manager` 默认打开 Skills + Project；两个定向入口分别打开 Skills + Project 与 Extensions + Project；进入后 `←/→` 仍可切换资源类型。
+- 入口命令为 `/config`，默认打开 Skills + Project；进入后 `←/→` 切换资源类型。
 - `Esc` 按页面层级处理：详情页返回列表；搜索有内容时先清空；主列表无 pending 时关闭；有 pending 时确认是否丢弃后关闭。
 - 搜索过滤、关闭、改完提示 reload —— 与 `pi config` / `pi-skills-manager` 的交互保持同源。
 - 不做"两层同时可编辑"（双圆点 / 双栏）：无生态先例，且 pi 的数据模型本来就是"一个作用域 = 一个写入目标"。
@@ -163,7 +163,7 @@ pi 本身能识别 `~/.agents/skills`、项目 `.agents/skills`（向上到 git 
 
 ### R7 自身保护 [已决]
 
-- `pi-pkg-manager` 自身仍显示为 `🔒 [in use]`，`[in use]` 使用 warning 标签，Project / Global 状态列按普通全局资源展示。
+- `pi-pkg-config` 自身仍显示为 `🔒 [in use]`，`[in use]` 使用 warning 标签，Project / Global 状态列按普通全局资源展示。
 - UI 内不可 disable/remove；卸载必须使用外部 `pi remove`。
 
 ## 5. 实现约束

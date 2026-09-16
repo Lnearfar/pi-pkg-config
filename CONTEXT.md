@@ -1,6 +1,6 @@
 # CONTEXT
 
-pi-pkg-manager 的领域词汇表。只放术语与含义，不放实现细节、不放需求。
+pi-pkg-config 的领域词汇表。只放术语与含义，不放实现细节、不放需求。
 
 ## Resource（资源）
 

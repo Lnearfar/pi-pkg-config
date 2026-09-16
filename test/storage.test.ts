@@ -1,12 +1,12 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { existsSync, mkdtempSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, mkdirSync, readFileSync, readdirSync, rmSync, utimesSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { AtomicSettingsStorage } from "../src/storage.ts";
 
-test("atomic storage writes one scope and leaves no manager temp or lock files", () => {
-	const root = mkdtempSync(join(tmpdir(), "pi-pkg-manager-"));
+test("atomic storage writes one scope and leaves no config temp or lock files", () => {
+	const root = mkdtempSync(join(tmpdir(), "pi-pkg-config-"));
 	try {
 		const agentDir = join(root, "agent");
 		mkdirSync(agentDir, { recursive: true });
@@ -25,15 +25,32 @@ test("atomic storage writes one scope and leaves no manager temp or lock files",
 			theme: "dark",
 			skills: ["-/a/SKILL.md"],
 		});
-		assert.equal(readdirSync(agentDir).some((name) => name.startsWith(".pi-pkg-manager-settings-")), false);
+		assert.equal(readdirSync(agentDir).some((name) => name.startsWith(".pi-pkg-config-settings-")), false);
 		assert.equal(existsSync(join(agentDir, "settings.json.lock")), false);
 	} finally {
 		rmSync(root, { recursive: true, force: true });
 	}
 });
 
+test("atomic storage removes stale legacy temp files", () => {
+	const root = mkdtempSync(join(tmpdir(), "pi-pkg-config-"));
+	try {
+		const agentDir = join(root, "agent");
+		mkdirSync(agentDir, { recursive: true });
+		writeFileSync(join(agentDir, "settings.json"), "{}\n");
+		const legacy = join(agentDir, ".pi-pkg-manager-settings-stale.tmp");
+		writeFileSync(legacy, "stale");
+		const old = new Date(Date.now() - 6 * 60_000);
+		utimesSync(legacy, old, old);
+		new AtomicSettingsStorage(root, agentDir);
+		assert.equal(existsSync(legacy), false);
+	} finally {
+		rmSync(root, { recursive: true, force: true });
+	}
+});
+
 test("atomic storage refuses a stale reviewed version without overwriting external edits", () => {
-	const root = mkdtempSync(join(tmpdir(), "pi-pkg-manager-"));
+	const root = mkdtempSync(join(tmpdir(), "pi-pkg-config-"));
 	try {
 		const agentDir = join(root, "agent");
 		mkdirSync(agentDir, { recursive: true });

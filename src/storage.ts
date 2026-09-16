@@ -21,7 +21,8 @@ interface SettingsStorage {
 	withLock(scope: SettingsScope, fn: (current: string | undefined) => string | undefined): void;
 }
 
-const PREFIX = ".pi-pkg-manager-settings-";
+const PREFIX = ".pi-pkg-config-settings-";
+const LEGACY_PREFIXES = [PREFIX, ".pi-pkg-manager-settings-"];
 const STALE_MS = 5 * 60_000;
 
 export function contentVersion(content: string | undefined): string {
@@ -153,7 +154,7 @@ export class AtomicSettingsStorage implements SettingsStorage {
 			const dir = dirname(path);
 			if (!existsSync(dir)) continue;
 			for (const name of readdirSync(dir)) {
-				if (!name.startsWith(PREFIX)) continue;
+				if (!LEGACY_PREFIXES.some((prefix) => name.startsWith(prefix))) continue;
 				const candidate = join(dir, name);
 				try {
 					if (Date.now() - statSync(candidate).mtimeMs > STALE_MS) unlinkSync(candidate);

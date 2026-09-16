@@ -171,7 +171,7 @@ export class PackageManagerComponent implements Focusable {
 		const extensions = label("Extensions", this.model.type === "extensions");
 		const projectScope = label(project, this.model.scope === "project");
 		const globalScope = label(global, this.model.scope === "global");
-		const title = ` ${this.theme.bold("Package Manager")}  `;
+		const title = ` ${this.theme.bold("Package Config")}  `;
 		const withKeys = `${title}${projectScope} ${this.keycap("Tab")} ${globalScope}  ${skills} ${this.keycap("←→")} ${extensions}`;
 		if (visibleWidth(withKeys) <= inner) return withKeys;
 		return `${title}${projectScope} ${globalScope}  ${skills} ${extensions}`;

@@ -155,17 +155,9 @@ async function runManager(ctx: ExtensionCommandContext, command: string, initial
 	}
 }
 
-export default function pkgManagerExtension(pi: ExtensionAPI): void {
-	pi.registerCommand("pkg-manager", {
-		description: "Manage Pi skills and extensions",
-		handler: async (_args, ctx) => runManager(ctx, "/pkg-manager"),
-	});
-	pi.registerCommand("skills-manager", {
-		description: "Manage Pi skills",
-		handler: async (_args, ctx) => runManager(ctx, "/skills-manager", "skills"),
-	});
-	pi.registerCommand("extensions-manager", {
-		description: "Manage Pi extensions",
-		handler: async (_args, ctx) => runManager(ctx, "/extensions-manager", "extensions"),
+export default function pkgConfigExtension(pi: ExtensionAPI): void {
+	pi.registerCommand("config", {
+		description: "Configure Pi skills and extensions",
+		handler: async (_args, ctx) => runManager(ctx, "/config"),
 	});
 }

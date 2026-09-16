@@ -4,7 +4,7 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "nod
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { DefaultPackageManager } from "@earendil-works/pi-coding-agent";
-import { PackageManagerBackend } from "../src/backend.ts";
+import { PackageManagerBackend, selfProtected } from "../src/backend.ts";
 import { PackageManagerModel } from "../src/model.ts";
 import type { ManagedResource, PendingChange } from "../src/types.ts";
 
@@ -132,4 +132,20 @@ test("backend merges pending resource edits onto externally changed settings thr
 	} finally {
 		rmSync(root, { recursive: true, force: true });
 	}
+});
+
+test("self-protection covers the current package and releases the legacy name", () => {
+	const resource = (source: string, path: string) => ({
+		path,
+		enabled: true,
+		metadata: { source, scope: "user" as const, origin: "package" as const },
+	});
+	const root = "/opt/pi-pkg-config";
+
+	assert.equal(selfProtected(resource("npm:pi-pkg-config@0.2.0", "/x/index.ts"), root), true);
+	assert.equal(selfProtected(resource("git:github.com/Lnearfar/pi-pkg-config", "/x/index.ts"), root), true);
+	assert.equal(selfProtected(resource("auto", `${root}/src/index.ts`), root), true);
+	assert.equal(selfProtected(resource("git:github.com/Lnearfar/pi-pkg-manager", "/x/index.ts"), root), false);
+	assert.equal(selfProtected(resource("npm:pi-pkg-manager@0.1.0", "/x/index.ts"), root), false);
+	assert.equal(selfProtected(resource("npm:pi-pkg-config-extra", "/x/index.ts"), root), false);
 });

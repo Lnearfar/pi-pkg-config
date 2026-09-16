@@ -56,7 +56,7 @@ test("overlay rendering never exceeds the width requested by Pi", () => {
 test("the header puts scope selection before resource type selection", () => {
 	const component = new PackageManagerComponent(model(), theme, keybindings, () => {}, () => {}, 3);
 	const header = component.render(120)[1]!;
-	assert.match(header, /\[Project\].*Tab.*Global.*\[Skills\].*←→.*Extensions/);
+	assert.match(header, /Package Config.*\[Project\].*Tab.*Global.*\[Skills\].*←→.*Extensions/);
 });
 
 test("selected inherited resources use the readable text foreground", () => {

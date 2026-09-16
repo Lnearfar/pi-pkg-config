@@ -1,39 +1,51 @@
 {
-  "name": "pi-pkg-manager",
-  "version": "0.1.0",
-  "description": "Manage enabled Pi skills and extensions across project and global scopes",
+  "name": "pi-pkg-config",
+  "version": "0.2.0",
+  "description": "Configure Pi skills and extensions across project and global scopes",
+  "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Lnearfar/pi-pkg-manager.git"
+    "url": "git+https://github.com/Lnearfar/pi-pkg-config.git"
   },
   "bugs": {
-    "url": "https://github.com/Lnearfar/pi-pkg-manager/issues"
+    "url": "https://github.com/Lnearfar/pi-pkg-config/issues"
   },
-  "homepage": "https://github.com/Lnearfar/pi-pkg-manager#readme",
+  "homepage": "https://github.com/Lnearfar/pi-pkg-config#readme",
   "type": "module",
   "engines": {
     "node": ">=22.19.0"
   },
   "keywords": [
     "pi-package",
-    "pi-extension"
+    "pi-extension",
+    "pi-config",
+    "terminal-ui"
   ],
   "files": [
     "src",
+    "docs",
     "README.md",
-    "CONTEXT.md",
-    "docs"
+    "CHANGELOG.md",
+    "LICENSE"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "pi": {
     "extensions": [
       "./src/index.ts"
     ],
-    "image": "https://raw.githubusercontent.com/Lnearfar/pi-pkg-manager/main/docs/images/pkg-manager.png"
+    "image": "https://raw.githubusercontent.com/Lnearfar/pi-pkg-config/main/docs/images/pkg-config.png"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
     "test": "node --experimental-strip-types --test test/*.test.ts",
-    "check": "npm run typecheck && npm test"
+    "check": "npm run typecheck && npm test",
+    "smoke:package": "node scripts/smoke-package.mjs",
+    "pack:check": "npm pack --dry-run",
+    "audit:runtime": "npm audit --omit=dev --omit=peer --audit-level=high",
+    "release:verify": "node scripts/verify-release.mjs",
+    "prepublishOnly": "npm run check && npm run pack:check"
   },
   "peerDependencies": {
     "@earendil-works/pi-coding-agent": "*",
