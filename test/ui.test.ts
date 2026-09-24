@@ -53,10 +53,50 @@ test("overlay rendering never exceeds the width requested by Pi", () => {
 	}
 });
 
-test("the header puts scope selection before resource type selection", () => {
+test("the title row keeps a fixed scope order and brackets the active one", () => {
 	const component = new PackageManagerComponent(model(), theme, keybindings, () => {}, () => {}, 3);
-	const header = component.render(120)[1]!;
-	assert.match(header, /Package Config.*\[Project\].*Tab.*Global.*\[Skills\].*←→.*Extensions/);
+	assert.match(component.render(120)[1]!, /Package Config \[Project\]\s+Global/);
+	const globalState = model();
+	globalState.scope = "global";
+	const globalView = new PackageManagerComponent(globalState, theme, keybindings, () => {}, () => {}, 3);
+	assert.match(globalView.render(120)[1]!, /Package Config Project\s+\[Global\]/);
+});
+
+test("the tab row splits on the centre column and highlights only the active tab", () => {
+	const taggedTheme = {
+		fg: (color: string, text: string) => `<${color}>${text}</${color}>`,
+		bg: (color: string, text: string) => `<${color}>${text}</${color}>`,
+		bold: (text: string) => text,
+		inverse: (text: string) => text,
+	} as unknown as Theme;
+	const state = model();
+	const component = new PackageManagerComponent(state, taggedTheme, keybindings, () => {}, () => {}, 3);
+	const skillsRow = component.render(500)[2]!;
+	assert.match(skillsRow, /<selectedBg><accent>\s*Skills/);
+	assert.doesNotMatch(skillsRow, /<selectedBg><accent>\s*Extensions/);
+	assert.match(skillsRow, /<text>\s*Extensions/);
+	state.type = "extensions";
+	const extensionsRow = component.render(500)[2]!;
+	assert.match(extensionsRow, /<selectedBg><accent>\s*Extensions/);
+	assert.doesNotMatch(extensionsRow, /<selectedBg><accent>\s*Skills/);
+});
+
+test("the status line carries both switch hints and abbreviates them as one unit", () => {
+	const statusOf = (lines: string[]) => lines.find((line) => line.includes("Ready to edit"))!;
+	const wide = new PackageManagerComponent(model(), theme, keybindings, () => {}, () => {}, 3);
+	assert.match(statusOf(wide.render(80)), /Shift\+Tab  Project\/Global\s+Tab  Skills\/Extensions/);
+	const narrow = new PackageManagerComponent(model(), theme, keybindings, () => {}, () => {}, 3);
+	assert.match(statusOf(narrow.render(66)), /⇧Tab  P\/G\s+Tab  S\/E/);
+});
+
+test("unsaved changes drop the switch hints before truncating the save hint", () => {
+	const state = model();
+	state.toggle();
+	assert.equal(state.pending.size, 1);
+	const component = new PackageManagerComponent(state, theme, keybindings, () => {}, () => {}, 3);
+	const status = component.render(50).find((line) => line.includes("unsaved changes"))!;
+	assert.match(status, /1 unsaved changes/);
+	assert.doesNotMatch(status, /P\/G|S\/E/);
 });
 
 test("selected inherited resources use the readable text foreground", () => {
@@ -122,10 +162,12 @@ test("Project status marker distinguishes inherited Global off from explicit Pro
 
 test("compact mode switches the column headers at the inner width boundary", () => {
 	const component = new PackageManagerComponent(model(), theme, keybindings, () => {}, () => {}, 3);
-	assert.doesNotMatch(component.render(65).join("\n"), /Project|Global/);
-	assert.match(component.render(66).join("\n"), /Project/);
-	assert.match(component.render(66).join("\n"), /Global/);
-	assert.match(component.render(50)[1] ?? "", /\[P\].*G/);
+	const narrow = component.render(65);
+	const wide = component.render(66);
+	assert.match(narrow[4]!, /\bP\b.*\bG\b/);
+	assert.doesNotMatch(narrow[4]!, /Project|Global/);
+	assert.match(wide[4]!, /Project/);
+	assert.match(wide[4]!, /Global/);
 });
 
 test("untrusted Project view marks trust and counts inherited state", () => {	const resource = model().catalog.global[0]!;
@@ -243,15 +285,163 @@ test("the details page shows the skill description", () => {
 	assert.match(details, /Description: Summarize a repository's state\./);
 });
 
-test("Tab switches scope while arrow keys switch resource type", () => {
+test("Tab switches resource type and Shift+Tab switches scope", () => {
 	const state = model();
 	const component = new PackageManagerComponent(state, theme, keybindings, () => {}, () => {}, 3);
 	component.handleInput("\t");
+	assert.equal(state.type, "extensions");
+	assert.equal(state.scope, "project");
+	component.handleInput("\u001b[Z");
 	assert.equal(state.scope, "global");
-	component.handleInput("\u001b[C");
 	assert.equal(state.type, "extensions");
 	component.handleInput("\t");
+	assert.equal(state.type, "skills");
+	component.handleInput("\u001b[Z");
 	assert.equal(state.scope, "project");
+});
+
+test("arrow and page keys jump one visible screen of resources", () => {
+	const resources: ManagedResource[] = Array.from({ length: 12 }, (_, index) => ({
+		...model().catalog.global[0]!,
+		id: `skills:/tmp/example-${index}/SKILL.md`,
+		path: `/tmp/example-${index}/SKILL.md`,
+		name: `resource-${index}`,
+	}));
+	const state = new PackageManagerModel(
+		{ global: resources, project: resources, globalSettings: {}, projectSettings: {} },
+		"/repo",
+		"/agent",
+		true,
+	);
+	// The first group header costs two rows, so a five-row budget shows four entries.
+	const pageKeys = {
+		matches: (data: string, name: string) =>
+			(name === "tui.select.pageDown" && data === "\u001b[6~") || (name === "tui.select.pageUp" && data === "\u001b[5~"),
+	} as unknown as KeybindingsManager;
+	const component = new PackageManagerComponent(state, theme, pageKeys, () => {}, () => {}, 5);
+	component.render(80);
+	component.handleInput("\u001b[C");
+	assert.equal(state.view.selected, 4);
+	assert.equal(state.view.scroll, 0);
+	component.render(80);
+	assert.equal(state.view.scroll, 1);
 	component.handleInput("\u001b[D");
+	assert.equal(state.view.selected, 0);
+	component.handleInput("\u001b[6~");
+	assert.equal(state.view.selected, 4);
+	component.handleInput("\u001b[5~");
+	assert.equal(state.view.selected, 0);
+});
+
+test("page keys still move the selection while the search field is open", () => {
+	const resources: ManagedResource[] = Array.from({ length: 12 }, (_, index) => ({
+		...model().catalog.global[0]!,
+		id: `skills:/tmp/example-${index}/SKILL.md`,
+		path: `/tmp/example-${index}/SKILL.md`,
+		name: `resource-${index}`,
+	}));
+	const state = new PackageManagerModel(
+		{ global: resources, project: resources, globalSettings: {}, projectSettings: {} },
+		"/repo",
+		"/agent",
+		true,
+	);
+	const pageKeys = {
+		matches: (data: string, name: string) =>
+			(name === "tui.select.pageDown" && data === "\u001b[6~") || (name === "tui.select.pageUp" && data === "\u001b[5~"),
+	} as unknown as KeybindingsManager;
+	const component = new PackageManagerComponent(state, theme, pageKeys, () => {}, () => {}, 5);
+	component.handleInput("/");
+	component.handleInput("resource-1");
+	assert.equal(state.view.searching, true);
+	assert.equal(state.resources().length, 3); // resource-1, resource-10, resource-11
+	component.render(80);
+	component.handleInput("\u001b[6~");
+	assert.equal(state.view.selected, 2);
+	component.handleInput("\u001b[5~");
+	assert.equal(state.view.selected, 0);
+	component.handleInput("\u001b[C");
+	assert.equal(state.view.selected, 2);
+	component.handleInput("\u001b[D");
+	assert.equal(state.view.selected, 0);
+});
+
+test("a one-row list budget still shows a resource instead of an empty panel", () => {
+	const state = model();
+	const component = new PackageManagerComponent(state, theme, keybindings, () => {}, () => {}, 1);
+	const output = component.render(80).join("\n");
+	assert.match(output, /a-very-long-resource-name/);
+	assert.doesNotMatch(output, /⌄/);
+	assert.doesNotMatch(output, /Current view has no detected resources/);
+});
+
+test("page keys stay live while searching without stealing typed characters", () => {
+	const resources: ManagedResource[] = Array.from({ length: 12 }, (_, index) => ({
+		...model().catalog.global[0]!,
+		id: `skills:/tmp/example-j${index}/SKILL.md`,
+		path: `/tmp/example-j${index}/SKILL.md`,
+		name: `resource-j${index}`,
+	}));
+	const state = new PackageManagerModel(
+		{ global: resources, project: resources, globalSettings: {}, projectSettings: {} },
+		"/repo",
+		"/agent",
+		true,
+	);
+	// A user may bind the page keys to printable characters.
+	const remapped = {
+		matches: (data: string, name: string) =>
+			name === "tui.select.pageDown" && (data === "j" || data === "\u001b[6~"),
+	} as unknown as KeybindingsManager;
+	const component = new PackageManagerComponent(state, theme, remapped, () => {}, () => {}, 5);
+	component.handleInput("/");
+	assert.equal(state.view.searching, true);
+	component.handleInput("j");
+	assert.equal(state.view.query, "j");
+	assert.equal(state.view.selected, 0);
+	component.handleInput("\u001b[6~");
+	assert.equal(state.view.query, "j");
+	assert.equal(state.view.selected, 4);
+});
+
+test("the search shortcut outranks a printable page-key remap", () => {
+	const state = model();
+	const remapped = {
+		matches: (data: string, name: string) => name === "tui.select.pageDown" && data === "/",
+	} as unknown as KeybindingsManager;
+	const component = new PackageManagerComponent(state, theme, remapped, () => {}, () => {}, 3);
+	component.handleInput("/");
+	assert.equal(state.view.searching, true);
+});
+
+test("status parts never exceed the inner width and keep the edit state", () => {
+	const state = model();
+	state.toggle();
+	const component = new PackageManagerComponent(state, theme, keybindings, () => {}, () => {}, 1);
+	for (const width of [4, 5, 6, 8, 12, 20, 39, 80]) {
+		for (const line of component.render(width)) {
+			assert.ok(visibleWidth(line) <= width, `line overflows at width ${width}`);
+		}
+	}
+	// Below the word-wrap width the edit state wraps character by character, so compare
+	// the stripped character stream there instead of looking for the word.
+	const tiny = component
+		.render(4)
+		.map((line) => line.replace(/[^A-Za-z0-9+]/g, ""))
+		.join("");
+	assert.ok(tiny.includes("Save"), "save hint lost at width 4");
+	for (const width of [12, 20, 39, 80]) {
+		assert.ok(component.render(width).join("\n").includes("Save"), `save hint clipped at width ${width}`);
+	}
+});
+
+test("a remapped Tab binding cannot swallow Shift+Tab", () => {
+	const state = model();
+	const remapped = {
+		matches: (data: string, name: string) => name === "tui.input.tab" && data === "\u001b[Z",
+	} as unknown as KeybindingsManager;
+	const component = new PackageManagerComponent(state, theme, remapped, () => {}, () => {}, 3);
+	component.handleInput("\u001b[Z");
+	assert.equal(state.scope, "global");
 	assert.equal(state.type, "skills");
 });

@@ -34,6 +34,18 @@ interface StateColumns {
 	globalStart: number;
 }
 
+interface VisibleEntry {
+	resource: ManagedResource;
+	index: number;
+	showGroup: boolean;
+}
+
+interface VisibleWindow {
+	scroll: number;
+	visible: VisibleEntry[];
+	used: number;
+}
+
 export class PackageManagerComponent implements Focusable {
 	focused = false;
 	private details = false;
@@ -80,17 +92,36 @@ export class PackageManagerComponent implements Focusable {
 			return;
 		}
 
-		if (this.keybindings.matches(data, "tui.input.tab") || matchesKey(data, Key.tab)) {
+		// Literal Shift+Tab wins over the configurable Tab binding, so remapping
+		// `tui.input.tab` cannot swallow the scope switch.
+		if (matchesKey(data, "shift+tab")) {
 			this.model.scope = this.model.scope === "project" ? "global" : "project";
 			this.model.clampSelection();
 			this.requestRender();
 			return;
 		}
-		if (matchesKey(data, Key.left) || matchesKey(data, Key.right)) {
+		if (this.keybindings.matches(data, "tui.input.tab") || matchesKey(data, Key.tab)) {
 			this.model.type = this.model.type === "skills" ? "extensions" : "skills";
 			this.model.clampSelection();
 			this.requestRender();
 			return;
+		}
+		// Both arrow keys stay usable while the search field is open, like the tab switches.
+		if (matchesKey(data, Key.left) || matchesKey(data, Key.right)) {
+			this.page(matchesKey(data, Key.right) ? 1 : -1);
+			this.requestRender();
+			return;
+		}
+		// Page keys stay live in both modes, but never steal a character the search field
+		// would type, and `/` always opens search from the list.
+		const printable = !/[\u0000-\u001f\u007f]/.test(data);
+		if (!(view.searching ? printable : data === "/")) {
+			const direction = this.pageDirection(data);
+			if (direction !== 0) {
+				this.page(direction);
+				this.requestRender();
+				return;
+			}
 		}
 
 		if (view.searching) {
@@ -99,7 +130,7 @@ export class PackageManagerComponent implements Focusable {
 				this.model.setQuery("");
 			} else if (matchesKey(data, Key.backspace)) {
 				this.model.setQuery(Array.from(view.query).slice(0, -1).join(""));
-			} else if (!/[\u0000-\u001f\u007f]/.test(data)) {
+			} else if (printable) {
 				this.model.setQuery(view.query + data);
 			}
 			this.requestRender();
@@ -115,10 +146,6 @@ export class PackageManagerComponent implements Focusable {
 			this.model.move(-1);
 		} else if (this.keybindings.matches(data, "tui.select.down") || matchesKey(data, Key.down)) {
 			this.model.move(1);
-		} else if (this.keybindings.matches(data, "tui.select.pageUp")) {
-			this.model.move(-8);
-		} else if (this.keybindings.matches(data, "tui.select.pageDown")) {
-			this.model.move(8);
 		} else if (matchesKey(data, Key.space)) {
 			this.model.toggle();
 		} else if (this.keybindings.matches(data, "tui.select.confirm") || matchesKey(data, Key.enter)) {
@@ -130,6 +157,20 @@ export class PackageManagerComponent implements Focusable {
 			this.done({ type: "close", pending: this.model.pending.size > 0 });
 		}
 		this.requestRender();
+	}
+
+	/** Move the selection one visible screen in the given direction. */
+	private page(direction: number): void {
+		const resources = this.model.resources();
+		const step = Math.max(1, this.resolveWindow(resources, this.collapsedGroups(resources)).visible.length);
+		this.model.move(direction * step);
+	}
+
+	/** -1 for page up, 1 for page down, 0 when neither binding matches. */
+	private pageDirection(data: string): -1 | 0 | 1 {
+		if (this.keybindings.matches(data, "tui.select.pageUp")) return -1;
+		if (this.keybindings.matches(data, "tui.select.pageDown")) return 1;
+		return 0;
 	}
 
 	private canRemove(resource: ManagedResource): boolean {
@@ -151,7 +192,8 @@ export class PackageManagerComponent implements Focusable {
 		};
 
 		lines.push(border(`╭${"─".repeat(inner)}╮`));
-		lines.push(row(this.renderHeader(inner)));
+		lines.push(row(this.renderTitleRow()));
+		lines.push(row(this.renderTabRow(inner)));
 		lines.push(row(this.theme.fg("dim", "─".repeat(inner))));
 		if (this.details) this.renderDetails(row, lines, inner);
 		else this.renderList(row, lines, inner);
@@ -161,20 +203,32 @@ export class PackageManagerComponent implements Focusable {
 		return lines;
 	}
 
-	private renderHeader(inner: number): string {
-		const compact = inner < 64;
-		const label = (text: string, active: boolean) =>
-			active ? this.theme.fg("accent", this.theme.bold(`[${text}]`)) : this.theme.fg("dim", text);
-		const project = compact ? "P" : "Project";
-		const global = compact ? "G" : "Global";
-		const skills = label("Skills", this.model.type === "skills");
-		const extensions = label("Extensions", this.model.type === "extensions");
-		const projectScope = label(project, this.model.scope === "project");
-		const globalScope = label(global, this.model.scope === "global");
-		const title = ` ${this.theme.bold("Package Config")}  `;
-		const withKeys = `${title}${projectScope} ${this.keycap("Tab")} ${globalScope}  ${skills} ${this.keycap("←→")} ${extensions}`;
-		if (visibleWidth(withKeys) <= inner) return withKeys;
-		return `${title}${projectScope} ${globalScope}  ${skills} ${extensions}`;
+	private renderTitleRow(): string {
+		// Fixed legend order: the active scope is bracketed in place, the pair never swaps.
+		const active = this.model.scope;
+		const label = (name: string, scope: "project" | "global") =>
+			scope === active
+				? this.theme.fg("accent", this.theme.bold(`[${name}]`))
+				: this.theme.fg("dim", name);
+		return ` ${this.theme.bold("Package Config")} ${label("Project", "project")}  ${label("Global", "global")} `;
+	}
+
+	private renderTabRow(inner: number): string {
+		const leftWidth = Math.floor(inner / 2);
+		const rightWidth = Math.max(0, inner - leftWidth - 1);
+		const skills = this.renderTab("Skills", leftWidth, this.model.type === "skills");
+		const extensions = this.renderTab("Extensions", rightWidth, this.model.type === "extensions");
+		return `${skills}${this.theme.fg("dim", "│")}${extensions}`;
+	}
+
+	private renderTab(label: string, width: number, active: boolean): string {
+		const clipped = truncateToWidth(label, Math.max(0, width), "");
+		const padding = Math.max(0, width - visibleWidth(clipped));
+		const leading = Math.floor(padding / 2);
+		const body = `${" ".repeat(leading)}${clipped}${" ".repeat(padding - leading)}`;
+		return active
+			? this.theme.bg("selectedBg", this.theme.fg("accent", this.theme.bold(body)))
+			: this.theme.fg("text", body);
 	}
 
 	private renderList(row: (content?: string) => string, lines: string[], inner: number): void {
@@ -198,28 +252,7 @@ export class PackageManagerComponent implements Focusable {
 		}
 
 		const collapsedGroups = this.collapsedGroups(resources);
-		const buildWindow = (start: number) => {
-			const visible: Array<{ resource: ManagedResource; index: number; showGroup: boolean }> = [];
-			let used = 0;
-			let lastGroup = "";
-			for (let index = start; index < resources.length; index++) {
-				const resource = resources[index]!;
-				const showGroup = resource.groupKey !== lastGroup;
-				const needed = showGroup && !collapsedGroups.has(resource.groupKey) ? 2 : 1;
-				if (used + needed > this.listRowBudget) break;
-				visible.push({ resource, index, showGroup });
-				used += needed;
-				lastGroup = resource.groupKey;
-			}
-			return { visible, used };
-		};
-
-		if (view.selected < view.scroll) view.scroll = view.selected;
-		let window = buildWindow(view.scroll);
-		while (view.scroll < view.selected && !window.visible.some((entry) => entry.index === view.selected)) {
-			view.scroll++;
-			window = buildWindow(view.scroll);
-		}
+		const window = this.resolveWindow(resources, collapsedGroups);
 		for (const entry of window.visible) {
 			const { resource } = entry;
 			const collapsed = collapsedGroups.has(resource.groupKey);
@@ -230,6 +263,41 @@ export class PackageManagerComponent implements Focusable {
 			lines.push(row(this.renderResource(resource, entry.index === view.selected, columns, collapsed)));
 		}
 		for (let index = window.used; index < this.listRowBudget; index++) lines.push(row(""));
+	}
+
+	/** Rows that fit from `start`, honouring group headers and collapsed sources. */
+	private buildWindow(resources: ManagedResource[], collapsedGroups: Set<string>, start: number): { visible: VisibleEntry[]; used: number } {
+		const visible: VisibleEntry[] = [];
+		let used = 0;
+		let lastGroup = "";
+		for (let index = start; index < resources.length; index++) {
+			const resource = resources[index]!;
+			const showGroup = resource.groupKey !== lastGroup;
+			let needed = showGroup && !collapsedGroups.has(resource.groupKey) ? 2 : 1;
+			// A short list still has to show one resource, even when its source header cannot fit.
+			if (needed > this.listRowBudget) needed = 1;
+			if (used + needed > this.listRowBudget) break;
+			visible.push({ resource, index, showGroup: showGroup && needed === 2 });
+			used += needed;
+			lastGroup = resource.groupKey;
+		}
+		return { visible, used };
+	}
+
+	/**
+	 * The window rendered for the current view, scrolled until the selection is visible.
+	 * The resolved scroll is written back so list rendering and paging agree on the page size.
+	 */
+	private resolveWindow(resources: ManagedResource[], collapsedGroups: Set<string>): VisibleWindow {
+		const view = this.model.view;
+		let scroll = Math.min(view.scroll, view.selected);
+		let window = this.buildWindow(resources, collapsedGroups, scroll);
+		while (scroll < view.selected && !window.visible.some((entry) => entry.index === view.selected)) {
+			scroll++;
+			window = this.buildWindow(resources, collapsedGroups, scroll);
+		}
+		view.scroll = scroll;
+		return { scroll, ...window };
 	}
 
 	private collapsedGroups(resources: ManagedResource[]): Set<string> {
@@ -256,8 +324,8 @@ export class PackageManagerComponent implements Focusable {
 			project:
 				columns.projectStart === undefined
 					? undefined
-					: { text: columns.compact ? "P" : "Project", color: "borderMuted" },
-			global: { text: columns.compact ? "G" : "Global", color: "borderMuted" },
+					: { text: columns.compact ? "P" : "Project", color: "muted" },
+			global: { text: columns.compact ? "G" : "Global", color: "muted" },
 		};
 		return ` ${this.composeStateRow("", cells, columns)} `;
 	}
@@ -268,7 +336,7 @@ export class PackageManagerComponent implements Focusable {
 		const prefix = " ⌄ ";
 		const available = Math.max(1, inner - visibleWidth(prefix) - visibleWidth(statistics));
 		const label = this.middleTruncate(resource.groupLabel, available);
-		return `${this.theme.fg("borderMuted", `${prefix}${label}`)}${this.theme.fg("muted", statistics)}`;
+		return `${this.theme.fg("accent", this.theme.bold(`${prefix}${label}`))}${this.theme.fg("muted", statistics)}`;
 	}
 
 	private groupCount(resources: ManagedResource[]): number {
@@ -408,19 +476,19 @@ export class PackageManagerComponent implements Focusable {
 	}
 
 	private renderFooter(inner: number): string[] {
-		if (this.details) return [this.statusLine(inner), ...this.actionLines([this.action("Back", "Enter"), this.action("Back", "Esc")], inner)];
+		if (this.details) return [...this.statusParts(inner), ...this.actionLines([this.action("Back", "Enter"), this.action("Back", "Esc")], inner)];
 		if (this.model.view.searching) {
 			return [
-				this.statusLine(inner),
+				...this.statusParts(inner),
 				...this.actionLines([this.action("Delete", "Backspace"), this.action("Clear", "Esc")], inner),
 			];
 		}
-		const actions = [this.action("Move", "↑↓"), this.action("on/off", "Space")];
+		const actions = [this.action("Move", "↑↓"), this.action("Page", "←→"), this.action("on/off", "Space")];
 		actions.push(this.action("Search", "/"), this.action("Details", "Enter"), this.action("Remove", "Del"), this.action("Close", "Esc"));
-		return [this.statusLine(inner), ...this.actionLines(actions, inner)];
+		return [ ...this.statusParts(inner), ...this.actionLines(actions, inner)];
 	}
 
-	private statusLine(inner: number): string {
+	private statusParts(inner: number): string[] {
 		const resources = this.model.resources();
 		const index = resources.length === 0 ? "0/0" : `${this.model.view.selected + 1}/${resources.length}`;
 		const pending = this.model.pending.size;
@@ -429,7 +497,27 @@ export class PackageManagerComponent implements Focusable {
 				? `${this.theme.fg("warning", `${pending} unsaved changes`)} · ${this.keycap("Ctrl+S", "accent")} ${this.theme.fg("accent", "Save")}`
 				: this.theme.fg("accent", this.theme.bold("Ready to edit"));
 		const left = this.theme.fg("dim", ` ${index}`);
-		return `${left}${" ".repeat(Math.max(1, inner - visibleWidth(left) - visibleWidth(right)))}${right}`;
+		// Both switches come from the same Tab family, so they abbreviate as one unit:
+		// full labels, then initials, then gone when the save hint needs the room.
+		const hintPair = (scopeKey: string, scopeLabel: string, typeLabel: string) =>
+			`${this.keycap(scopeKey)} ${this.theme.fg("muted", scopeLabel)}   ${this.keycap("Tab")} ${this.theme.fg("muted", typeLabel)}`;
+		const body = (hints: string) => `${left}  ${hints}`;
+		for (const hints of [
+			hintPair("Shift+Tab", "Project/Global", "Skills/Extensions"),
+			hintPair("⇧Tab", "P/G", "S/E"),
+		]) {
+			const candidate = body(hints);
+			if (visibleWidth(candidate) + visibleWidth(right) + 1 <= inner) {
+				return [`${candidate}${" ".repeat(Math.max(1, inner - visibleWidth(candidate) - visibleWidth(right)))}${right}`];
+			}
+		}
+		const withIndex = `${left}${" ".repeat(Math.max(1, inner - visibleWidth(left) - visibleWidth(right)))}${right}`;
+		if (visibleWidth(withIndex) <= inner) return [withIndex];
+		// Never clip the edit state: the position indicator yields, then the edit state wraps.
+		if (visibleWidth(right) + 1 <= inner) return [`${' '.repeat(inner - visibleWidth(right))}${right}`];
+		const indent = inner >= 2 ? " " : "";
+		const wrapped = wrapTextWithAnsi(right, Math.max(1, inner - indent.length)).map((line) => `${indent}${line}`);
+		return visibleWidth(left) <= inner ? [left, ...wrapped] : wrapped;
 	}
 
 	private action(label: string, key: string): string {

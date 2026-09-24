@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.3.0] - 2026-09-24
+
+- Rebuild the header as two rows: `Package Config [Project] Global` above a centre-split `Skills | Extensions` tab strip.
+- Move the view switches to `Tab` (Skills / Extensions) and `Shift+Tab` (Project / Global), shown as hints in the status line that shrink from full labels to initials and drop when the save hint needs the room.
+- Make `←` / `→` and `PageUp` / `PageDown` jump one visible screen of resources instead of a fixed eight rows.
+- Keep inherited resources in their global directory group when project settings pull them back in, instead of a separate `Project settings` group.
+- Colour source group headers with accent bold and lighten the `Project` / `Global` column headers.
+- Regenerate the screenshot and document the legacy `pi-pkg-manager` migration for the duplicate `/config` command.
+
 ## [0.2.0] - 2026-09-16
 
 - Rename the package, command, and repository to `pi-pkg-config` with `/config` as the only entry point.

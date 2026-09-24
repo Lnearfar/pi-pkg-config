@@ -22,6 +22,7 @@
 ## Features
 
 - **Control resources** — enable or disable each detected Skill and Extension.
+- **Switch fast** — a two-row header keeps the `Skills` / `Extensions` tabs and the `Project` / `Global` scope in view; `Tab` and `Shift+Tab` flip them, `←` / `→` jump a screen.
 - **Compare scopes** — Project shows aligned `Project` and `Global` state for every resource.
 - **Cycle Project state** — `Space` moves through inherit, on, and off.
 - **Review changes** — `Ctrl+S` shows the merged settings candidate before it writes.
@@ -47,18 +48,22 @@ pi install git:github.com/Lnearfar/pi-pkg-config -l
 
 Run `/config` in a Pi TUI session.
 
+> [!NOTE]
+> Upgrading from the old `pi-pkg-manager` repository? Remove it first with `pi remove git:github.com/Lnearfar/pi-pkg-manager`. Both packages register `/config`, and Pi renames duplicate commands, so `/config` would otherwise be unavailable as `/config:1` / `/config:2`.
+
 ## Use
 
 1. Run `/config`.
-2. Use `Tab` for Project / Global and `←` / `→` for Skills / Extensions.
+2. `Tab` switches the Skills / Extensions tabs, `Shift+Tab` switches the Project / Global scope.
 3. Select a resource with `↑` / `↓`, then press `Space`.
 4. Press `Ctrl+S`, review the candidate, and choose reload timing.
 
 | Key | Action |
 |---|---|
-| `Tab` | Switch Project / Global |
-| `←` / `→` | Switch Skills / Extensions |
+| `Tab` | Switch Skills / Extensions |
+| `Shift+Tab` | Switch Project / Global |
 | `↑` / `↓` | Navigate resources |
+| `←` / `→`, `PageUp` / `PageDown` | Jump one visible screen of resources |
 | `Space` | Cycle inherit / on / off (Project) or toggle (Global) |
 | `/` | Search resolved resources locally |
 | `Enter` | Open resource details |
@@ -75,7 +80,7 @@ Run `/config` in a Pi TUI session.
 
 Inherited rows show `— (on)` or `— (off)`; explicit Project choices show `on` or `off`. Project-only resources show `—` in the Global column. Below 64 columns of inner width, headers shorten to `P` and `G`.
 
-A source with one Extension renders as one row named after its source. Skill source labels retain the `skills` directory, such as `./.agents/skills` and `~/.pi/agent/skills`.
+A source with one Extension renders as one row named after its source. Skill source labels retain the `skills` directory, such as `./.agents/skills` and `~/.pi/agent/skills`. A resource that Project settings pull back in from a global directory stays in that directory's group, so one file never appears under two different sources.
 
 > [!IMPORTANT]
 > Pi trust enables Project settings. An untrusted Project view shows `trust required` and remains read-only.
@@ -103,10 +108,10 @@ pi -e .
 Releases are Git tags. Tag a commit and push it:
 
 ```bash
-git tag v0.2.0 && git push origin v0.2.0
+git tag v0.3.0 && git push origin v0.3.0
 ```
 
-Pin a tag with `pi install git:github.com/Lnearfar/pi-pkg-config@v0.2.0` and keep the tag matching the `package.json` version.
+Pin a tag with `pi install git:github.com/Lnearfar/pi-pkg-config@v0.3.0` and keep the tag matching the `package.json` version.
 
 ## Documentation
 

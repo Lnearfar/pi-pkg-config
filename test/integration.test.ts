@@ -77,7 +77,13 @@ test("global disable and project enable/reset round-trip through Pi resolution",
 		assert.deepEqual(JSON.parse(readFileSync(join(cwd, ".pi", "settings.json"), "utf8")).skills, [skillPath, `+${skillPath}`]);
 
 		catalog = await backend.resolve();
-		assert.equal(catalog.project.find((resource) => resource.path === skillPath)?.enabled, true);
+		const inheritedCopy = catalog.global.find((resource) => resource.path === skillPath)!;
+		const overriddenCopy = catalog.project.find((resource) => resource.path === skillPath)!;
+		assert.equal(overriddenCopy.enabled, true);
+		// The explicit project entry must not strand the skill in a synthetic settings group.
+		assert.equal(overriddenCopy.groupLabel, inheritedCopy.groupLabel);
+		assert.equal(overriddenCopy.groupKey, inheritedCopy.groupKey);
+		assert.doesNotMatch(overriddenCopy.groupLabel, /settings/i);
 		model = new PackageManagerModel(catalog, cwd, agentDir, true);
 		const overridden = model.resources().find((resource) => resource.path === skillPath)!;
 		model.toggle(overridden); // load -> unload

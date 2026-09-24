@@ -79,7 +79,7 @@ async function savePending(
 	return "continue";
 }
 
-const OVERLAY_CHROME_ROWS = 11; // Borders, header, column header, separator, status line, and wrapped actions.
+const OVERLAY_CHROME_ROWS = 12; // Borders, title row, tab row, column header, separator, status line, and wrapped actions.
 
 async function runManager(ctx: ExtensionCommandContext, command: string, initialType: ResourceType = "skills"): Promise<void> {
 	if (ctx.mode !== "tui") {

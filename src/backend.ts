@@ -147,7 +147,15 @@ function mapResolved(
 			const inheritedGlobal = global !== undefined && !isFullProjectPackage(resource.metadata, projectSettings, cwd, agentDir);
 			const diagnostics = diagnosticsFor(path, skillValidation.diagnostics);
 			if (!existsSync(path)) diagnostics.push({ type: "error", path, message: "Resource path does not exist" });
-			const groupKey = metadataKey(resource.metadata);
+			// An explicit settings entry loses the directory metadata (`baseDir`/`source`) that
+			// auto-discovered resources carry. Reuse the global resolution's metadata so an
+			// inherited resource stays in the directory group the user sees in the Global view
+			// instead of landing in the synthetic settings bucket.
+			const groupSource =
+				global !== undefined && resource.metadata.origin !== "package" && sourceRoot(resource.metadata, path) === undefined
+					? global.metadata
+					: resource.metadata;
+			const groupKey = metadataKey(groupSource);
 			result.push({
 				id: `${type}:${path}`,
 				type,
@@ -160,7 +168,7 @@ function mapResolved(
 				inheritedGlobal,
 				packageSource: resource.metadata.origin === "package" ? resource.metadata.source : undefined,
 				groupKey,
-				groupLabel: groupLabel(resource.metadata, path, cwd),
+				groupLabel: groupLabel(groupSource, path, cwd),
 				diagnostics,
 				selfProtected: selfProtected(resource, extensionRoot),
 			});
