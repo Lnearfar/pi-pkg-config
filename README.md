@@ -16,7 +16,7 @@
 <div align="center">
   <img src="docs/images/pkg-config.png" alt="pi-pkg-config running in Pi with Project and Skills selected" width="900">
   <br>
-  <sub>Real Pi session with demo skills.</sub>
+  <sub>Screeshot of pi-pkg-config TUI.</sub>
 </div>
 
 ## Why you need this extensions?
