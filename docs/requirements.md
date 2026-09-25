@@ -96,14 +96,14 @@ pi 本身能识别 `~/.agents/skills`、项目 `.agents/skills`（向上到 git 
 - 头部为两行：第一行左对齐 `Package Config`，紧跟一个空格后是作用域指示 `[Project]  Global`（当前 scope 加方括号并使用 accent 加粗，非当前 scope 使用 dim）；第二行是资源页签条，以窗口内宽正中列为界分成等宽两半，`Skills` 在左、`Extensions` 在右，标签在各半格内居中，两半之间用 `dim` 的 `│` 分隔。
 - `Tab` 切换 Skills/Extensions，`Shift+Tab` 切换 Project/Global；`←/→` 与 `PageUp/PageDown` 相同，按当前可见列表窗口整页移动选中项（不再是固定行数）。搜索模式下这些按键仍然生效（搜索框本身只支持追加与退格）。详情页中 `Tab` 与 `Shift+Tab` 不生效，只保留返回。
 - `Project` 视图显示对齐的 `Project` 与 `Global` 状态列；作用域指示高亮 `[Project]`，`Space` 修改 Project 状态。`Global` 视图只显示 Global 相关信息，作用域指示高亮 `[Global]`，`Space` 修改 Global 状态；Global 状态列保持与 Project 视图相同的最右侧列位。内部宽度低于 64 列时，状态列标题使用 `P` / `G` 缩写。
-- 统计行、分列状态列与页签条各自使用固定配色：状态列标题 `Project` / `Global` 使用 `muted`（内部宽度低于 64 列时缩写为 `P` / `G`）；来源分组标题使用 accent 加粗显示缩短来源路径；来源统计 `N/M enabled` 使用 `muted`；页签条选中半格使用 `selectedBg` 背景、accent 加粗文字，未选中半格使用普通 `text`；作用域指示中当前 scope 使用 accent 加粗并加方括号，非当前 scope 使用 `dim`，两者位置不随切换互换。
+- 统计行、分列状态列与页签条各自使用固定配色：状态列标题 `Project` / `Global` 使用 `muted`（内部宽度低于 64 列时缩写为 `P` / `G`）；来源分组标题使用 accent 加粗先是来源 scope（`Project` / `Global`，包来源显示其 scope），再接缩短来源路径；来源统计 `N/M enabled` 使用 `muted`；页签条选中半格使用 `selectedBg` 背景、accent 加粗文字，未选中半格使用普通 `text`；作用域指示中当前 scope 使用 accent 加粗并加方括号，非当前 scope 使用 `dim`，两者位置不随切换互换。
 - 底部使用两层信息栏：状态行左侧显示当前位置 `6/24`，中间显示两个切换图例（`Shift+Tab Project/Global` 与 `Tab Skills/Extensions`），右侧显示编辑状态（`Ready to edit` 或 `N unsaved changes · Ctrl+S Save`）；图例按可用宽度**整档**降级：全称 → 缩写（`⇧Tab P/G` 与 `Tab S/E`）→ 整体隐藏；极端窄宽下位置指示先让位，编辑状态换行而不是被截断。工具栏使用按键标签展示资源操作：`↑↓ Move`、`←→ Page`、`Space on/off`、`/ Search`、`Enter Details`、`Del Remove`、`Esc Close`，窄终端自动换行并保留全部操作。
 - 切换视图时保留每个视图的搜索词、滚动位置与 pending 修改。
 - `Global` 视图编辑并展示全局资源与 Global 状态。
 - `Project` 视图编辑当前项目设置，同时显示 Project 与 Global 状态列；项目资源排在前，全局资源默认 inherited，直接编辑时写入项目覆盖。
 - 列表按来源分组（每个包一组、每个本地目录一组），来源是辅助信息；不再额外增加 Package 顶层视图。
-- 每个本地目录与包来源使用同一种固定展开来源分组；标题以静态 `⌄` 开头，显示缩短来源路径，后面紧跟一个空格与 `N/M enabled` 统计，具体 resource 行相对标题缩进一层并承载全部操作；列表可用高度只剩一行时省略来源标题、直接渲染 resource 行，保证不会出现空列表；Project 视图统计 Project 生效状态，Global 视图统计 Global 状态，Extensions 视图省略统计；只有一个 extension 的来源省略 `⌄` 标题，直接以来源名作为单行名称，文件名不再显示；项目内资源使用相对当前目录的 `./` 路径，全局资源使用 `~` 路径，skill 来源显示到 `skills` 目录（如 `./.agents/skills`、`~/.pi/agent/skills`），长路径使用中间省略号，详情页显示完整路径与完整 package source。
-- 由显式 settings 条目引入、且同一路径也存在于全局解析的资源，沿用全局来源目录分组（例如 `Local ~/.pi/agent/skills`），不单列 settings 分组；只有无法归入任何目录的来源才回退到 `Project settings` / `Global settings`。
+- 每个本地目录与包来源使用同一种固定展开来源分组；标题以静态 `⌄` 开头，先是来源 scope（`Project` / `Global`，包来源显示其 scope），再接缩短来源路径，后面紧跟一个空格与 `N/M enabled` 统计，具体 resource 行相对标题缩进一层并承载全部操作；列表可用高度只剩一行时省略来源标题、直接渲染 resource 行，保证不会出现空列表；Project 视图统计 Project 生效状态，Global 视图统计 Global 状态，Extensions 视图省略统计；只有一个 extension 的来源省略 `⌄` 标题，直接以来源名作为单行名称，文件名不再显示；项目内资源使用相对当前目录的 `./` 路径，全局资源使用 `~` 路径，skill 来源显示到 `skills` 目录（如 `./.agents/skills`、`~/.pi/agent/skills`），长路径使用中间省略号，详情页显示完整路径与完整 package source。
+- 由显式 settings 条目引入、且同一路径也存在于全局解析的资源，沿用全局来源目录分组（例如 `Global ~/.pi/agent/skills`），不单列 settings 分组；只有无法归入任何目录的来源才回退到 `Project settings` / `Global settings`。
 - `/` 进入本地搜索模式，只过滤当前 Tab 中 pi 已检测到的资源，绝不联网；标题栏下方显示 `⌕ Search: <query>` 紧凑输入栏，查询文本使用 accent；列表只展示含匹配资源的来源容器；搜索模式下所有字符仅作为查询文本，`Esc` 清空并退出搜索。
 - 列表模式下的 `Space` 只作用于列表，搜索模式中的 `Space` 是查询字符。
 - 一个同时提供 extension 和 skill 的包会分别出现在两个 Tab。
@@ -111,8 +111,8 @@ pi 本身能识别 `~/.agents/skills`、项目 `.agents/skills`（向上到 git 
 - 卸载属于即时包操作，不进入 toggle 的 pending state；执行前必须确认。
 - 移除包后不保留历史；本地资源不执行文件删除。
 - 左侧状态符只表示当前 Project 生效状态，使用实心 `●` 或空心 `○`；Project / Global 列只显示文字。列表顶部显示对齐列名 `Project` 与 `Global`。Project 列以 `— (on)` / `— (off)` 表示 inherit 后的生效状态，以 `on` / `off` 表示显式 Project 覆盖；Global 列显示全局状态，`—` 表示资源仅属于 Project。
-- Project 视图中，Global 为 `on` 时，Project 生效 `on` 显示 success `●`，Project 生效 `off` 显示 error `●`。Global 为 `off` 时，Project inherit 显示 muted `○`，显式 Project `on` 显示 success `●`，显式 Project `off` 显示 error `●`。Project-only 资源的 `on` / `off` 分别显示 success / error `●`。
-- Global 视图中，Global `on` 显示 success `●`，Global `off` 显示 muted `○`。
+- Project 视图中，Global 为 `on` 时，Project 生效 `on` 显示绿色 `●`（theme `syntaxComment`），Project 生效 `off` 显示 error `●`。Global 为 `off` 时，Project inherit 显示 muted `○`，显式 Project `on` 显示绿色 `●`，显式 Project `off` 显示 error `●`。Project-only 资源的 `on` / `off` 分别显示绿色 / error `●`。
+- Global 视图中，Global `on` 显示绿色 `●`，Global `off` 显示 muted `○`。
 - 入口命令为 `/config`，默认打开 Skills + Project；进入后 `Tab` / `Shift+Tab` 切换资源页签与作用域。
 - `Esc` 按页面层级处理：详情页返回列表；搜索有内容时先清空；主列表无 pending 时关闭；有 pending 时确认是否丢弃后关闭。
 - 搜索过滤、关闭、改完提示 reload —— 与 `pi config` / `pi-skills-manager` 的交互保持同源。

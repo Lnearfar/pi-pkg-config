@@ -155,7 +155,7 @@ test("Project status marker distinguishes inherited Global off from explicit Pro
 
 	assert.match(component.render(500).join("\n"), /<muted>○<\/muted>/);
 	state.toggle(project);
-	assert.match(component.render(500).join("\n"), /<success>●<\/success>/);
+	assert.match(component.render(500).join("\n"), /<syntaxComment>●<\/syntaxComment>/);
 	state.toggle(project);
 	assert.match(component.render(500).join("\n"), /<error>●<\/error>/);
 });
@@ -188,6 +188,18 @@ test("group statistics follow the source label with a single space", () => {
 	const output = component.render(120).join("\n");
 	assert.match(output, /⌄ A very long global source label 1\/1 enabled/);
 	assert.doesNotMatch(output, /1\/1 enabled\s*$/m);
+});
+
+test("group headers pair a muted marker with an mdLink label", () => {
+	const taggedTheme = {
+		fg: (color: string, text: string) => `<${color}>${text}</${color}>`,
+		bg: (color: string, text: string) => `<${color}>${text}</${color}>`,
+		bold: (text: string) => text,
+		inverse: (text: string) => text,
+	} as unknown as Theme;
+	const component = new PackageManagerComponent(model(), taggedTheme, keybindings, () => {}, () => {}, 3);
+	const header = component.render(500).find((line) => line.includes("A very long global source label"))!;
+	assert.match(header, /<muted> ⌄ <\/muted><mdLink>A very long global source label<\/mdLink>/);
 });
 
 test("Extensions view omits group statistics", () => {

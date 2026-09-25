@@ -336,7 +336,7 @@ export class PackageManagerComponent implements Focusable {
 		const prefix = " ⌄ ";
 		const available = Math.max(1, inner - visibleWidth(prefix) - visibleWidth(statistics));
 		const label = this.middleTruncate(resource.groupLabel, available);
-		return `${this.theme.fg("accent", this.theme.bold(`${prefix}${label}`))}${this.theme.fg("muted", statistics)}`;
+		return `${this.theme.fg("muted", prefix)}${this.theme.fg("mdLink", label)}${this.theme.fg("muted", statistics)}`;
 	}
 
 	private groupCount(resources: ManagedResource[]): number {
@@ -407,14 +407,14 @@ export class PackageManagerComponent implements Focusable {
 
 	private status(resource: ManagedResource): string {
 		if (this.model.scope === "global") {
-			return this.model.effectiveEnabled(resource) ? this.theme.fg("success", "●") : this.theme.fg("muted", "○");
+			return this.model.effectiveEnabled(resource) ? this.theme.fg("syntaxComment", "●") : this.theme.fg("muted", "○");
 		}
 		if (!this.model.projectTrusted) return this.theme.fg("warning", "?");
 		const effective = this.model.effectiveEnabled(resource);
-		if (!resource.inheritedGlobal) return this.theme.fg(effective ? "success" : "error", "●");
+		if (!resource.inheritedGlobal) return this.theme.fg(effective ? "syntaxComment" : "error", "●");
 		const global = this.model.globalState(resource);
 		if (global === false && this.model.currentOverride(resource) === "inherit") return this.theme.fg("muted", "○");
-		return this.theme.fg(effective ? "success" : "error", "●");
+		return this.theme.fg(effective ? "syntaxComment" : "error", "●");
 	}
 
 	private diagnosticMarkers(resource: ManagedResource): string {

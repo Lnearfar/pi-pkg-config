@@ -52,9 +52,10 @@ function sourceRoot(metadata: PathMetadata, path: string): string | undefined {
 }
 
 function groupLabel(metadata: PathMetadata, path: string, cwd: string): string {
-	if (metadata.origin === "package") return metadata.source;
+	const scope = metadata.scope === "project" ? "Project" : "Global";
+	if (metadata.origin === "package") return `${scope} ${metadata.source}`;
 	const root = sourceRoot(metadata, path);
-	if (root) return `Local ${shortPath(root, cwd, metadata.scope === "project")}`;
+	if (root) return `${scope} ${shortPath(root, cwd, metadata.scope === "project").replace(/^\.\//, "")}`;
 	return metadata.scope === "project" ? "Project settings" : "Global settings";
 }
 
