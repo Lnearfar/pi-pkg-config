@@ -23,7 +23,6 @@ export interface ManagedResource {
 	groupKey: string;
 	groupLabel: string;
 	diagnostics: ResourceDiagnostic[];
-	selfProtected: boolean;
 }
 
 export interface PendingChange {

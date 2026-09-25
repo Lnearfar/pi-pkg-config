@@ -25,7 +25,6 @@ function resource(overrides: Partial<ManagedResource> = {}): ManagedResource {
 		groupKey: "global-auto",
 		groupLabel: "Local ~/.agents",
 		diagnostics: [],
-		selfProtected: false,
 		...overrides,
 	};
 }

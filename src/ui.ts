@@ -174,7 +174,7 @@ export class PackageManagerComponent implements Focusable {
 	}
 
 	private canRemove(resource: ManagedResource): boolean {
-		if (!resource.packageSource || resource.selfProtected) return false;
+		if (!resource.packageSource) return false;
 		if (this.model.scope === "project") {
 			return this.model.projectTrusted && !resource.inheritedGlobal && resource.metadata.scope === "project";
 		}
@@ -346,10 +346,9 @@ export class PackageManagerComponent implements Focusable {
 	private renderResource(resource: ManagedResource, selected: boolean, columns: StateColumns, collapsed = false): string {
 		const state = this.stateCells(resource, columns.compact);
 		const markers = this.diagnosticMarkers(resource);
-		const inUse = resource.selfProtected ? ` 🔒 ${this.tag("in use", "warning")}` : "";
 		const pending = this.model.isPending(resource) ? ` ${this.theme.fg("warning", "*")}` : "";
 		const lead = `${selected ? "› " : "  "}${this.status(resource)} `;
-		const trailing = `${markers}${inUse}${pending}`;
+		const trailing = `${markers}${pending}`;
 		const nameEnd = columns.projectStart ?? columns.globalStart;
 		const label = collapsed ? resource.groupLabel : resource.name;
 		const name = this.middleTruncate(label, Math.max(1, nameEnd - visibleWidth(lead) - visibleWidth(trailing)));
@@ -435,7 +434,7 @@ export class PackageManagerComponent implements Focusable {
 		if (!resource) return;
 		const cells = this.stateCells(resource, inner < 64);
 		const detailLines = [
-			` ${this.status(resource)} ${resource.name}${resource.selfProtected ? "  🔒 in use" : ""}`,
+			` ${this.status(resource)} ${resource.name}`,
 			...(resource.description ? [` Description: ${resource.description}`] : []),
 			...(this.model.scope === "project" ? [` Project: ${cells.project?.text ?? "—"}`] : []),
 			` Global: ${cells.global.text}`,
@@ -459,7 +458,6 @@ export class PackageManagerComponent implements Focusable {
 					: "off";
 			lines.push(row(this.theme.fg("warning", ` Pending: ${before} → ${after}`)));
 		}
-		if (resource.selfProtected) lines.push(row(this.theme.fg("warning", " 🔒 In use by this manager.")));
 		if (resource.diagnostics.length === 0) lines.push(row(this.theme.fg("dim", " Diagnostics: clear")));
 		for (const diagnostic of resource.diagnostics) {
 			lines.push(
@@ -541,10 +539,6 @@ export class PackageManagerComponent implements Focusable {
 	}
 
 	private keycap(label: string, color: ThemeColor = "muted"): string {
-		return this.theme.bg("selectedBg", this.theme.fg(color, ` ${label} `));
-	}
-
-	private tag(label: string, color: ThemeColor): string {
 		return this.theme.bg("selectedBg", this.theme.fg(color, ` ${label} `));
 	}
 

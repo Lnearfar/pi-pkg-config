@@ -133,7 +133,7 @@ export class PackageManagerModel {
 	}
 
 	toggle(resource = this.selectedResource()): boolean {
-		if (!resource || resource.selfProtected || (this.scope === "project" && !this.projectTrusted)) return false;
+		if (!resource || (this.scope === "project" && !this.projectTrusted)) return false;
 		const key = pendingKey(resource, this.scope);
 		if (this.scope === "global") {
 			const before = resource.enabled;

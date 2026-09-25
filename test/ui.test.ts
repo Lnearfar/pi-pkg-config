@@ -28,7 +28,6 @@ function model(): PackageManagerModel {
 		groupKey: "global",
 		groupLabel: "A very long global source label",
 		diagnostics: [],
-		selfProtected: false,
 	};
 	const catalog: ResolvedCatalog = {
 		global: [resource],
@@ -251,7 +250,6 @@ function extensionModel(names: string[]): PackageManagerModel {
 		groupKey: "package:npm:pi-demo",
 		groupLabel: "npm:pi-demo",
 		diagnostics: [],
-		selfProtected: false,
 	}));
 	return new PackageManagerModel(
 		{ global: resources, project: resources, globalSettings: {}, projectSettings: {} },

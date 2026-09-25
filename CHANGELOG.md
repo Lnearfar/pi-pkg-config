@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.1] - 2026-09-25
+
+- Drop the `🔒 in use` self-protection: the manager's own package now behaves like any
+  other resource and can be disabled or removed from inside `/config`.
+- Prefix source labels with their scope (`Project .agents/skills`, `Global npm:pi-demo`),
+  colour them with `mdLink`, and show enabled resources with a green marker.
+
 ## [0.3.0] - 2026-09-24
 
 - Rebuild the header as two rows: `Package Config [Project] Global` above a centre-split `Skills | Extensions` tab strip.

@@ -16,7 +16,6 @@ function item(path: string, overrides: Partial<ManagedResource> = {}): ManagedRe
 		groupKey: "global",
 		groupLabel: "Local ~/.agents",
 		diagnostics: [],
-		selfProtected: false,
 		...overrides,
 	};
 }
@@ -102,11 +101,7 @@ test("project-owned resources cycle between on and off", () => {
 	assert.equal(state.pending.size, 0);
 });
 
-test("self-protected and untrusted project resources are read-only", () => {
-	const protectedState = model([item("/x/SKILL.md", { selfProtected: true })]);
-	assert.equal(protectedState.toggle(), false);
-	assert.equal(protectedState.pending.size, 0);
-
+test("untrusted project resources are read-only", () => {
 	const untrusted = model([item("/y/SKILL.md")]);
 	untrusted.projectTrusted = false;
 	assert.equal(untrusted.toggle(), false);

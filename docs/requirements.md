@@ -164,10 +164,10 @@ pi 本身能识别 `~/.agents/skills`、项目 `.agents/skills`（向上到 git 
 - 不自动 trust，不写 `.pi/settings.json`；显示 pi 原生的 trust 提示。
 - 完成 trust 后才允许保存 Project 覆盖。
 
-### R7 自身保护 [已决]
+### R7 无自身保护 [已决]
 
-- `pi-pkg-config` 自身仍显示为 `🔒 [in use]`，`[in use]` 使用 warning 标签，Project / Global 状态列按普通全局资源展示。
-- UI 内不可 disable/remove；卸载必须使用外部 `pi remove`。
+- `pi-pkg-config` 自身与其它资源完全同等对待：不显示 `in use` 之类的标记，也可以在 `/config` 内被 disable 或移除。
+- 后果由用户承担：禁用自身后需 reload 才会失去 `/config`，此时要恢复得用外部 `pi install` / 手改 settings。
 
 ## 5. 实现约束
 

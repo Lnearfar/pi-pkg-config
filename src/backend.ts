@@ -59,15 +59,6 @@ function groupLabel(metadata: PathMetadata, path: string, cwd: string): string {
 	return metadata.scope === "project" ? "Project settings" : "Global settings";
 }
 
-export function selfProtected(resource: ResolvedResource, extensionRoot: string): boolean {
-	const path = canonical(resource.path);
-	const root = canonical(extensionRoot);
-	if (path === root || path.startsWith(`${root}/`)) return true;
-	// Only the current identity is protected. A legacy pi-pkg-manager install stays
-	// manageable so it can be removed after migrating to pi-pkg-config.
-	return /(?:^|[/@:])pi-pkg-config(?:@|$|[/])/i.test(resource.metadata.source);
-}
-
 interface SkillValidation {
 	diagnostics: ResourceDiagnostic[];
 	descriptions: Map<string, string>;
@@ -171,7 +162,6 @@ function mapResolved(
 				groupKey,
 				groupLabel: groupLabel(groupSource, path, cwd),
 				diagnostics,
-				selfProtected: selfProtected(resource, extensionRoot),
 			});
 		}
 	}

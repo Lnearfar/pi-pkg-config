@@ -1,6 +1,6 @@
 {
   "name": "pi-pkg-config",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Configure Pi skills and extensions across project and global scopes",
   "license": "MIT",
   "repository": {
