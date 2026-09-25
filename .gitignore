@@ -3,3 +3,6 @@ node_modules/
 coverage/
 .pi/
 .DS_Store
+
+# Local-only helper skill (kept out of the published repo)
+.agents/skills/create-readme/

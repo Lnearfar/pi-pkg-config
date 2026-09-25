@@ -2,16 +2,16 @@
 
 # pi-pkg-config
 
-*Configure Pi skills and extensions from one TUI.*
+*Toggle Pi skills and extensions conveniently inside TUI.*
 
 ![Pi 0.85.1](https://img.shields.io/badge/pi-0.85.1-2ea043)
 ![Node 22.19+](https://img.shields.io/badge/node-%E2%89%A522.19-2ea043)
 
-[Features](#features) · [Install](#install) · [Use](#use) · [Scopes](#scopes) · [Development](#development)
+[Features](#features) · [Install](#install) · [Use](#use) · [Scopes](#scopes)· [Safety](#safety) · [Development](#development)
 
 </div>
 
-`pi-pkg-config` configures Pi's resolved Skills and Extensions. It stages resource changes, applies Project overrides, displays resolved details, and removes installed packages after confirmation.
+`pi-pkg-config` gives a simple TUI for controlling which Pi skills and extensions are active, while keeping everything aligned with Pi's native configuration system.
 
 <div align="center">
   <img src="docs/images/pkg-config.png" alt="pi-pkg-config running in Pi with Project and Skills selected" width="900">
@@ -19,18 +19,23 @@
   <sub>Real Pi session with demo skills.</sub>
 </div>
 
+## Why you need this extensions?
+
+The extensions originates from one simple frustration:
+
+*Every project needs a different set of extensions and skills.*
+
+Instead of searching, finding, downloading, and configuring them every time, why not install everything globally, disable them by default, and **enable only what you need** for each project?
+
+To do so, frankly speaking, you can **manually** configure `settings.json` to toggle the loading of extensions and skills. However, that's **not convenient** (at least for me. I don't want to remember all the settings syntax or type long paths). The good news is that this extension make managing configuration **much easier**.
+
 ## Features
 
-- **Control resources** — enable or disable each detected Skill and Extension.
-- **Switch fast** — a two-row header keeps the `Skills` / `Extensions` tabs and the `Project` / `Global` scope in view; `Tab` and `Shift+Tab` flip them, `←` / `→` jump a screen.
-- **Compare scopes** — Project shows aligned `Project` and `Global` state for every resource.
-- **Cycle Project state** — `Space` moves through inherit, on, and off.
-- **Review changes** — `Ctrl+S` shows the merged settings candidate before it writes.
-- **Inspect resolution** — details include skill descriptions, paths, sources, overrides, and diagnostics.
-- **Remove packages safely** — review all affected resources before removal.
-- **Protect settings** — saves merge unrelated edits and use locks with atomic replacement.
+- **Package types**: switch between the Skills and Extensions configuration views with `tab`.
 
-The active package remains available as `🔒 in use`.
+- **Scope control**: toggle between Project and Global scope for Skills and Extensions with `shift+tab`.
+
+- **Toggle resources** — enable or disable each detected Skill and Extension with `space`.
 
 ## Install
 
@@ -48,15 +53,11 @@ pi install git:github.com/Lnearfar/pi-pkg-config -l
 
 Run `/config` in a Pi TUI session.
 
-> [!NOTE]
-> Upgrading from the old `pi-pkg-manager` repository? Remove it first with `pi remove git:github.com/Lnearfar/pi-pkg-manager`. Both packages register `/config`, and Pi renames duplicate commands, so `/config` would otherwise be unavailable as `/config:1` / `/config:2`.
-
 ## Use
 
-1. Run `/config`.
-2. `Tab` switches the Skills / Extensions tabs, `Shift+Tab` switches the Project / Global scope.
-3. Select a resource with `↑` / `↓`, then press `Space`.
-4. Press `Ctrl+S`, review the candidate, and choose reload timing.
+Run `/config`.
+
+The following are keyboard control inside tui (also show at the bottom of the tui)
 
 | Key | Action |
 |---|---|
@@ -80,19 +81,9 @@ Run `/config` in a Pi TUI session.
 
 Inherited rows show `— (on)` or `— (off)`; explicit Project choices show `on` or `off`. Project-only resources show `—` in the Global column. Below 64 columns of inner width, headers shorten to `P` and `G`.
 
-A source with one Extension renders as one row named after its source. Skill source labels retain the `skills` directory, such as `./.agents/skills` and `~/.pi/agent/skills`. A resource that Project settings pull back in from a global directory stays in that directory's group, so one file never appears under two different sources.
-
-> [!IMPORTANT]
-> Pi trust enables Project settings. An untrusted Project view shows `trust required` and remains read-only.
-
 ## Safety
 
-Pi resolves every displayed resource. The extension uses Pi's package and settings APIs for the same provenance model.
-
-- Local searches stay inside Pi's resolved catalog.
-- Saves retain unrelated external settings edits.
-- Package removal persists settings before managed-file cleanup.
-- Local package removal keeps local source files in place.
+This pi extension relies entirely on Pi's **native** package settings mechanisms, with all configurations written explicitly to the corresponding scope's `settings.json`.
 
 ## Development
 
@@ -105,15 +96,18 @@ pi -e .
 
 `npm run check` runs TypeScript type-checking and the Node test suite. `npm run pack:check` shows the exact npm tarball contents.
 
-Releases are Git tags. Tag a commit and push it:
-
-```bash
-git tag v0.3.0 && git push origin v0.3.0
-```
-
-Pin a tag with `pi install git:github.com/Lnearfar/pi-pkg-config@v0.3.0` and keep the tag matching the `package.json` version.
-
 ## Documentation
 
 - [`docs/requirements.md`](docs/requirements.md) — confirmed behavior and design decisions
 - [`CHANGELOG.md`](CHANGELOG.md) — release history
+
+## If you don't like it
+If `pi-pkg-config` does not fit your taste, uninstall it anytime with 
+```
+pi uninstall git:github.com/Lnearfar/pi-pkg-config
+```
+All changes remain in the corresponding scope's `settings.json`, where they can be inspected or edited manually.
+
+## Support the Project
+
+If you find `pi-pkg-config` useful, consider leaving a ⭐ — it helps more people discover this project.
